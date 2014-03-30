@@ -9,13 +9,14 @@
 #include <iostream>
 
 
-Client::Client(const std::string& address, const std::string& port, std::size_t thread_count):
+Client::Client(const std::string& address, const std::string& port, std::size_t thread_count,  const std::string& document_root):
 		//_context(boost::asio::ssl::context::sslv23_client),
 		//_socket(io_service, _context),
 		_acceptor(_io_service),
 		_port(port),
 		_address(address),
 		_thread_count(thread_count),
+		_document_root(document_root),
 		_strand(_io_service), //connection
 		_socket(), //_socket(_io_service)  //connection
 		_threads()
@@ -69,6 +70,7 @@ void Client::start_accept()
 	_acceptor.async_accept(*_socket,
 				boost::bind(&Client::handle_accept, this,
 						boost::asio::placeholders::error));
+	std::cout<<"endof start_accept"<<std::endl;
 }
 
 void Client::handle_accept(const boost::system::error_code& error)
@@ -83,11 +85,14 @@ void Client::handle_accept(const boost::system::error_code& error)
 		std::cout<< "handle accept !error" << std::endl;
 		this->start_connection();
 	}
+
+	std::cout<<"endof handle_accept"<<std::endl;
 }
 
 void Client::handle_stop()
 {
 	_io_service.stop();
+	std::cout<<"endof handle_stop"<<std::endl;
 }
 
 
@@ -126,6 +131,7 @@ void Client::start_connection()
 					boost::asio::placeholders::bytes_transferred)));
 
 	//_socket->async_read_some(boost::asio::buffer(_buffer),_strand.wrap( boost::bind(&Client::handle_read, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred)));
+	std::cout<<"endof start_connection"<<std::endl;
 }
 
 void Client::handle_read(const boost::system::error_code& error, std::size_t bytes_transferred)
@@ -139,20 +145,22 @@ void Client::handle_read(const boost::system::error_code& error, std::size_t byt
 	//boost::tribool result;
 	//boost::tie(result, boost::tuples::ignore) = request_parser_.parse(request_, buffer_.data(), buffer_.data() + bytes_transferred);
 
-	    if (result)
-	    {
-	      //request_handler_.handle_request(request_, reply_);
-	      //boost::asio::async_write(socket_, reply_.to_buffers(), strand_.wrap( boost::bind(&connection::handle_write, shared_from_this(),boost::asio::placeholders::error)));
-	    }
-	    else if (!result)
-	    {
-	      //reply_ = reply::stock_reply(reply::bad_request);
-	      //boost::asio::async_write(socket_, reply_.to_buffers(),strand_.wrap(boost::bind(&connection::handle_write, shared_from_this(),boost::asio::placeholders::error)));
-	    }
-	    else
-	    {
-	      //socket_.async_read_some(boost::asio::buffer(buffer_),strand_.wrap(boost::bind(&connection::handle_read, shared_from_this(),boost::asio::placeholders::error,boost::asio::placeholders::bytes_transferred)));
-	    }
+	if (result)
+	{
+		//request_handler_.handle_request(request_, reply_);
+	    //boost::asio::async_write(socket_, reply_.to_buffers(), strand_.wrap( boost::bind(&connection::handle_write, shared_from_this(),boost::asio::placeholders::error)));
+	}
+	else if (!result)
+	{
+		//reply_ = reply::stock_reply(reply::bad_request);
+	    //boost::asio::async_write(socket_, reply_.to_buffers(),strand_.wrap(boost::bind(&connection::handle_write, shared_from_this(),boost::asio::placeholders::error)));
+	}
+	else
+	{
+		//socket_.async_read_some(boost::asio::buffer(buffer_),strand_.wrap(boost::bind(&connection::handle_read, shared_from_this(),boost::asio::placeholders::error,boost::asio::placeholders::bytes_transferred)));
+	}
+
+	std::cout<<"endof handle_read"<<std::endl;
 }
 
 void Client::handle_write(const boost::system::error_code& error)
@@ -165,4 +173,5 @@ void Client::handle_write(const boost::system::error_code& error)
 	    _socket->shutdown(boost::asio::ip::tcp::socket::shutdown_both, code_error);
 	    //_socket.close();
 	}
+	std::cout<<"endof handle_write"<<std::endl;
 }

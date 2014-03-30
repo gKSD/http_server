@@ -17,7 +17,6 @@
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/thread/thread.hpp>
 
-
 #include "parser.hpp"
 
 enum { max_length = 1024 , buffer_length = 8192};
@@ -26,7 +25,7 @@ class Client : private boost::noncopyable,  public boost::enable_shared_from_thi
 {
 public:
 
-	Client(const std::string& address, const std::string& port, std::size_t thread_count);
+	Client(const std::string& address, const std::string& port, std::size_t thread_count,  const std::string& document_root);
 	virtual ~Client();
 
 	void run();
@@ -55,9 +54,8 @@ private:
 
 	std::string _port;
 	std::string _address;
-
 	std::size_t _thread_count;
-
+	std::string _document_root;
 
 	//from connection class
 	boost::asio::io_service::strand _strand;
@@ -67,6 +65,9 @@ private:
 
 
 	std::vector<boost::shared_ptr<boost::thread> > _threads;
+
+
+	Parser parser;
 };
 
 #endif /* CLIENT_HPP_ */
