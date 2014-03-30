@@ -13,13 +13,15 @@
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
 
 
 #include "parser.hpp"
 
 enum { max_length = 1024 , buffer_length = 8192};
 
-class Client : private boost::noncopyable
+class Client : private boost::noncopyable,  public boost::enable_shared_from_this<Client>
 {
 public:
 
@@ -57,9 +59,9 @@ private:
 
 	//from connection class
 	boost::asio::io_service::strand _strand;
-
 	//boost::asio::ip::tcp::socket _socket;
 	boost::shared_ptr<boost::asio::ip::tcp::socket> _socket;
+	//boost::shared_ptr<boost::asio::io_service::strand> _strand;
 };
 
 #endif /* CLIENT_HPP_ */

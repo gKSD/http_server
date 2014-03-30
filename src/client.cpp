@@ -19,7 +19,6 @@ Client::Client(const std::string& address, const std::string& port, std::size_t 
 		_strand(_io_service), //connection
 		_socket() //_socket(_io_service)  //connection
 {
-
 	//_socket.reset(new connection(io_service_, request_handler_));
 
 	//_socket.set_verify_mode(boost::asio::ssl::verify_none);
@@ -66,7 +65,9 @@ void Client::start_accept()
 
 	_socket.reset(new boost::asio::ip::tcp::socket(_io_service));
 
-	_acceptor.async_accept(*_socket, boost::bind(&handle_accept, this, boost::asio::placeholders::error));
+	_acceptor.async_accept(*_socket,
+				boost::bind(&Client::handle_accept, this,
+						boost::asio::placeholders::error));
 }
 
 void Client::handle_accept(const boost::system::error_code& error)
@@ -95,7 +96,13 @@ boost::asio::ip::tcp::socket& Client::socket()
 
 void Client::start_connection()
 {
-	_socket->async_read_some(boost::asio::buffer(_buffer),_strand.wrap( boost::bind(&handle_read, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred)));
+	_socket->async_read_some(boost::asio::buffer(_buffer),
+	      _strand.wrap(
+	        boost::bind(&Client::handle_read, shared_from_this(),
+	          boost::asio::placeholders::error,
+	          boost::asio::placeholders::bytes_transferred)));
+
+	//_socket->async_read_some(boost::asio::buffer(_buffer),_strand.wrap( boost::bind(&Client::handle_read, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred)));
 }
 
 void Client::handle_read(const boost::system::error_code& error, std::size_t bytes_transferred)
