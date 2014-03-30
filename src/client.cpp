@@ -17,7 +17,8 @@ Client::Client(const std::string& address, const std::string& port, std::size_t 
 		_address(address),
 		_thread_count(thread_count),
 		_strand(_io_service), //connection
-		_socket() //_socket(_io_service)  //connection
+		_socket(), //_socket(_io_service)  //connection
+		_threads()
 {
 	//_socket.reset(new connection(io_service_, request_handler_));
 
@@ -74,10 +75,12 @@ void Client::handle_accept(const boost::system::error_code& error)
 {
 	if (error)
 	{
+		std::cout<< "handle_accept error" << std::endl;
 		this->start_accept();
 	}
 	else
 	{
+		std::cout<< "handle accept !error" << std::endl;
 		this->start_connection();
 	}
 }
@@ -85,6 +88,24 @@ void Client::handle_accept(const boost::system::error_code& error)
 void Client::handle_stop()
 {
 	_io_service.stop();
+}
+
+
+void Client::run()
+{
+	  //std::vector<boost::shared_ptr<boost::thread> > threads;
+	std::cout << "Client::run()" << std::endl;
+	  for (std::size_t i = 0; i < _thread_count; ++i)
+	  {
+	    boost::shared_ptr<boost::thread> thread(new boost::thread(
+	          boost::bind(&boost::asio::io_service::run, &_io_service)));
+	    _threads.push_back(thread);
+	  }
+
+	  std::cout << "_threads.size() = "<< _threads.size() << std::endl;
+	  // Wait for all threads in the pool to exit.
+	  for (std::size_t i = 0; i < _threads.size(); ++i)
+	    _threads[i]->join();
 }
 
 //**************************************************************************************************
@@ -96,17 +117,20 @@ boost::asio::ip::tcp::socket& Client::socket()
 
 void Client::start_connection()
 {
+	std::cout<< "start_connection" << std::endl;
+
 	_socket->async_read_some(boost::asio::buffer(_buffer),
-	      _strand.wrap(
-	        boost::bind(&Client::handle_read, shared_from_this(),
-	          boost::asio::placeholders::error,
-	          boost::asio::placeholders::bytes_transferred)));
+			_strand.wrap(
+					boost::bind(&Client::handle_read, shared_from_this(),
+					boost::asio::placeholders::error,
+					boost::asio::placeholders::bytes_transferred)));
 
 	//_socket->async_read_some(boost::asio::buffer(_buffer),_strand.wrap( boost::bind(&Client::handle_read, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred)));
 }
 
 void Client::handle_read(const boost::system::error_code& error, std::size_t bytes_transferred)
 {
+	std::cout<< "handle read" << std::endl;
 	if (error) return;
 
 	bool result;
@@ -133,8 +157,10 @@ void Client::handle_read(const boost::system::error_code& error, std::size_t byt
 
 void Client::handle_write(const boost::system::error_code& error)
 {
+	std::cout<< "hadle write" <<std::endl;
 	if (!error)
 	{
+		std::cout<< "!error" <<std::endl;
 		boost::system::error_code code_error;
 	    _socket->shutdown(boost::asio::ip::tcp::socket::shutdown_both, code_error);
 	    //_socket.close();

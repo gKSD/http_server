@@ -15,6 +15,7 @@
 #include <boost/asio/ssl.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
+#include <boost/thread/thread.hpp>
 
 
 #include "parser.hpp"
@@ -28,6 +29,7 @@ public:
 	Client(const std::string& address, const std::string& port, std::size_t thread_count);
 	virtual ~Client();
 
+	void run();
 
 private:
 	void handle_connect(const boost::system::error_code& error, boost::asio::ip::tcp::resolver::iterator endpoint_iterator);
@@ -62,6 +64,9 @@ private:
 	//boost::asio::ip::tcp::socket _socket;
 	boost::shared_ptr<boost::asio::ip::tcp::socket> _socket;
 	//boost::shared_ptr<boost::asio::io_service::strand> _strand;
+
+
+	std::vector<boost::shared_ptr<boost::thread> > _threads;
 };
 
 #endif /* CLIENT_HPP_ */

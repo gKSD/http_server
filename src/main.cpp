@@ -30,8 +30,12 @@ int main(int argc, char* argv[])
 		string port = "8086";
 		size_t thread_count = 1;
 
-	    Client c(address, port, thread_count);
+	    //Client client(address, port, thread_count);
 
+	    //client.run();
+
+		boost::shared_ptr<Client> client(new Client(address, port, thread_count));
+		client->run();
 	  }
 	  catch (std::exception& e)
 	  {
