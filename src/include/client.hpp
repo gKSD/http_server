@@ -14,7 +14,10 @@
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
 
-enum { max_length = 1024 };
+
+#include "parser.hpp"
+
+enum { max_length = 1024 , buffer_length = 8192};
 
 class Client : private boost::noncopyable
 {
@@ -28,21 +31,35 @@ private:
 	void handle_connect(const boost::system::error_code& error, boost::asio::ip::tcp::resolver::iterator endpoint_iterator);
 
 	void start_accept();
+	void handle_accept(const boost::system::error_code& error);
+	void handle_stop();
+
+	//connection
+	boost::asio::ip::tcp::socket& socket();
+
+	void start_connection();
+	void handle_read(const boost::system::error_code& error, std::size_t bytes_transferred);
+	void handle_write(const boost::system::error_code& error);
 
 private:
 
 	boost::asio::io_service _io_service;
 	//boost::asio::ssl::context _context;
-	//boost::asio::ssl::stream<boost::asio::ip::tcp::socket> _socket;
 	boost::asio::ip::tcp::acceptor _acceptor; //слушает входящие соединения
 
-	char _read_buffer [max_length];
-	char _write_buffer [max_length];
+	char _buffer [buffer_length];
 
 	std::string _port;
 	std::string _address;
 
 	std::size_t _thread_count;
+
+
+	//from connection class
+	boost::asio::io_service::strand _strand;
+
+	//boost::asio::ip::tcp::socket _socket;
+	boost::shared_ptr<boost::asio::ip::tcp::socket> _socket;
 };
 
 #endif /* CLIENT_HPP_ */

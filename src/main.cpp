@@ -6,10 +6,37 @@
 // Description : Hello World in C++, Ansi-style
 //============================================================================
 
+#include "include/client.hpp"
+
 #include <iostream>
 using namespace std;
 
-int main() {
-	cout << "!!!Hello World!!!" << endl; // prints !!!Hello World!!!
-	return 0;
+int main(int argc, char* argv[])
+{
+	try
+	  {
+	    /*if (argc != 3)
+	    {
+	      std::cerr << "Usage: client <host> <port>\n";
+	      return 1;
+	    }
+
+	    string address = argv[1];
+	    string port = argv[2];
+	    size_t thread_count = 1;
+	    */
+
+		string address = "localhost";
+		string port = "8086";
+		size_t thread_count = 1;
+
+	    Client c(address, port, thread_count);
+
+	  }
+	  catch (std::exception& e)
+	  {
+	    std::cerr << "Exception: " << e.what() << "\n";
+	  }
+
+	  return 0;
 }
