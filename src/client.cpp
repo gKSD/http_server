@@ -67,9 +67,7 @@ void Client::start_accept()
 
 	_socket.reset(new boost::asio::ip::tcp::socket(_io_service));
 
-	_acceptor.async_accept(*_socket,
-				boost::bind(&Client::handle_accept, this,
-						boost::asio::placeholders::error));
+	_acceptor.async_accept(*_socket, boost::bind(&Client::handle_accept, this, boost::asio::placeholders::error));
 	std::cout<<"endof start_accept"<<std::endl;
 }
 
@@ -100,17 +98,16 @@ void Client::run()
 {
 	  //std::vector<boost::shared_ptr<boost::thread> > threads;
 	std::cout << "Client::run()" << std::endl;
-	  for (std::size_t i = 0; i < _thread_count; ++i)
-	  {
-	    boost::shared_ptr<boost::thread> thread(new boost::thread(
-	          boost::bind(&boost::asio::io_service::run, &_io_service)));
-	    _threads.push_back(thread);
-	  }
+	for (std::size_t i = 0; i < _thread_count; ++i)
+	{
+		boost::shared_ptr<boost::thread> thread(new boost::thread(boost::bind(&boost::asio::io_service::run, &_io_service)));
+		_threads.push_back(thread);
+	}
 
-	  std::cout << "_threads.size() = "<< _threads.size() << std::endl;
-	  // Wait for all threads in the pool to exit.
-	  for (std::size_t i = 0; i < _threads.size(); ++i)
-	    _threads[i]->join();
+	std::cout << "_threads.size() = "<< _threads.size() << std::endl;
+
+	for (std::size_t i = 0; i < _threads.size(); ++i)
+		_threads[i]->join();
 }
 
 //**************************************************************************************************
