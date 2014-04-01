@@ -44,109 +44,34 @@ bool Parser::parse(const string& request)
 	stringstream stream_request(request);
 
 	string line;
-	//getline(stream_request, qqq);
-
-	int j = 0;
-	while (getline(stream_request, line))
-	{
-		if (j == 0) {j++; parse_first_line(line);}
-		cout << "********* "<< line<<endl;
-	}
-
-
 	//1) парсим метод, урл и протокол
 	//остальные заголовки ниже отдельно
-	int i = 0;
-	const char *ptr = request.c_str();
-
-	while(isspace(*ptr)) ptr++;
-
-	while(isalpha(*ptr)) //parse method - GET or POST
-	{
-		cout<<*ptr<<endl;
-		_request.method.push_back(*ptr);
-		i++;
-		ptr++;
-	}
-
-	while(isspace(*ptr)) ptr++;
-
-
-	//parse url
-	char url[MAX_LENGTH] = {0};
-	char *tmp = url;
-	char code[3];//, decode;
-
-	memset(url, 0, MAX_LENGTH);
-
-	while(isgraph(*ptr))
-	{
-		cout<<*ptr<<endl;
-		//_request.uri.push_back(*ptr);
-
-		if (*ptr == '%')
-		{
-			if (strlen(ptr) >= 2 && (strncmp(ptr + 1,  left_code_border, 2) >= 0 && strncmp(ptr + 1, rigth_code_border, 2) <= 0))
-			{
-				code[0] = *(++ptr);
-				code[1] = *(++ptr);
-				//long lcode = strtol(code, 0, 16);
-				//decode = (char)lcode;
-				//*tmp = decode;
-				*tmp = (char) strtol(code, 0, 16);
-				tmp++;
-				ptr++;
-				continue;
-			}
-		}
-
-		*tmp = *ptr;
-		tmp++;
-		ptr++;
-	}
-
-	while(isspace(*ptr)) ptr++;
-	while(isgraph(*ptr)) //parse protocol
-	{
-		cout<<*ptr<<endl;
-		_request.protocol.push_back(*ptr);
-		ptr++;
-	}
+	if (getline(stream_request, line)) parse_first_line(line);
+	else return false; //&&&&&&
 
 	cout <<"Method: "<< _request.method<<endl;
 	cout <<"URL: " << _request.url<<endl;
 	cout <<"Protocol: " << _request.protocol<<endl;
 
-	//парсим остальные заголовки
-	while (*ptr)
+	while (getline(stream_request, line))
 	{
-		string header;
-		string value;
-
-		while (!isgraph(*ptr)) ptr++;
-
-		while(ptr && *ptr && *ptr != ':')
+		vector<string> tokens;
+		boost::split(tokens, line, boost::is_any_of(":"));
+		vector<string>::iterator it = tokens.begin();
+		if (is_valid_header(*it))
 		{
-			header.push_back(*ptr);
-			ptr++;
-		}
+			string header = *it;
+			string value;
 
-		ptr++;
-		while (ptr && *ptr && isspace(*ptr)) ptr++;
+			for(it++;it != tokens.end(); it++) value.append(*it);
 
-		while(ptr && *ptr && *ptr != '\n')
-		{
-			value.push_back(*ptr);
-			ptr++;
-		}
-		if (ptr && *ptr && *ptr == '\r') ptr++;
-
-		if (is_valid_header(header))
-		{
 			_request.headers.insert(std::pair<string,string>(header, value));
 			cout<<"** "<<header<< " => "<<_request.headers.at(header)<<endl;
 		}
 	}
+
+	//парсим остальные заголовки
+
 
 	return true;
 }
@@ -163,31 +88,59 @@ bool Parser::parse_first_line(string &str)
 	vector<string>::iterator it = tokens.begin();
 	cout<< "1: "<< *it<<endl;
 
+	if (tokens.size() == 0)
+	{
+		_request.url = "";
+		_request.protocol = "";
+		_request.method = "";
+		return false;
+	}
+
 	if (!((*it).compare(method_GET) == 0 || (*it).compare(method_POST) == 0 || (*it).compare(method_HEAD) == 0 )) _f_has_method = false;
 	if ((*it).compare(method_GET) != 0) _f_is_supported_method = false;
 
 	_request.method = *it;
 
 	it++;
-	cout<< "2: "<< *it<<endl;
-	//boost::regex regex("(\/[\w\s\.]+)+\/?");
-	boost::regex regex("/[0-9a-zA-Z_%\./-]*");
-	//boost::regex regex("/[\w%\/]*");
-	boost::smatch match_result;
-	if (boost::regex_match(*it,  match_result, regex))
+	if (it != tokens.end())
 	{
-		cout << "correct";
-		_f_has_url = true;
-		_request.url = get_valid_url(*it);
+		cout<< "2: "<< *it<<endl;
+		//boost::regex regex("(\/[\w\s\.]+)+\/?");
+		//boost::regex regex("/[0-9a-zA-Z_%\./-]*");
+		boost::regex regex("/[0-9a-zA-Z_%\./\!\"#\&\'\*\,\:\;\<\=\>\?\[\|\^\`\{\|\}-]*");
+		//boost::regex regex("/[\w%\/]*");
+		boost::smatch match_result;
+		if (boost::regex_match(*it,  match_result, regex))
+		{
+			cout << "correct";
+			_f_has_url = true;
+			_request.url = get_valid_url(*it);
+		}
+		else
+		{
+			cout<< "incorrect";
+			_f_has_url = false;
+			_request.url = "";
+		}
 	}
 	else
 	{
-		cout<< "incorrect";
-		_f_has_url = false;
 		_request.url = "";
+		_request.protocol = "";
+		return false;
 	}
 
-
+	it++;
+	if (it != tokens.end())
+	{
+		//boost::regex regex("HTTP/?1\.[0|1]"));
+		_request.protocol.append(*it);
+	}
+	else
+	{
+		_request.protocol = "";
+		return false;
+	}
 
 	return true;
 }
