@@ -53,7 +53,7 @@ namespace request
 struct request
 {
 	std::string method;
-	std::string uri;
+	std::string url;
 	std::string protocol;
 	str_to_str_map headers;
 };

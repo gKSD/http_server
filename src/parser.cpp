@@ -71,12 +71,12 @@ bool Parser::parse(const string& request)
 	while(isspace(*ptr)) ptr++;
 
 
-	//parse uri
-	char uri[MAX_LENGTH] = {0};
-	char *tmp = uri;
+	//parse url
+	char url[MAX_LENGTH] = {0};
+	char *tmp = url;
 	char code[3];//, decode;
 
-	memset(uri, 0, MAX_LENGTH);
+	memset(url, 0, MAX_LENGTH);
 
 	while(isgraph(*ptr))
 	{
@@ -113,7 +113,7 @@ bool Parser::parse(const string& request)
 	}
 
 	cout <<"Method: "<< _request.method<<endl;
-	cout <<"URI: " << _request.uri<<endl;
+	cout <<"URL: " << _request.url<<endl;
 	cout <<"Protocol: " << _request.protocol<<endl;
 
 	//парсим остальные заголовки
@@ -177,13 +177,13 @@ bool Parser::parse_first_line(string &str)
 	{
 		cout << "correct";
 		_f_has_url = true;
-		_request.uri = get_valid_uri(*it);
+		_request.url = get_valid_url(*it);
 	}
 	else
 	{
 		cout<< "incorrect";
 		_f_has_url = false;
-		_request.uri = "";
+		_request.url = "";
 	}
 
 
@@ -191,35 +191,49 @@ bool Parser::parse_first_line(string &str)
 	return true;
 }
 
-string Parser::get_valid_uri(string &str)
+string Parser::get_valid_url(string &str)
 {
-	char *ptr = str.c_str();
-	char *ptr_end =  ptr + str.length();
+	string result;
 
-	char uri[MAX_LENGTH] = {0};
-	char *tmp = uri;
+	const char *ptr = str.c_str();
+	const char *ptr_end =  ptr + str.length();
+
+	char url[MAX_LENGTH] = {0};
+	char *tmp = url;
+	char decode;
 	char code[3];//, decode;
 
-	memset(uri, 0, MAX_LENGTH);
+	memset(url, 0, MAX_LENGTH);
 
 	while(ptr != ptr_end)
 	{
+		if (*ptr == '!' || *ptr == ';' || *ptr == '\"' || *ptr == '#' || *ptr == '&' || *ptr == '\'' || *ptr == '*' ||
+				*ptr == '<' || *ptr == '>' || *ptr == '?' || *ptr == '`' || *ptr == '|')
+			return "/";
+
 		if (*ptr == '%')
 		{
 			if ((ptrdiff_t)(ptr_end-ptr) > 2 && (strncmp(ptr + 1,  left_code_border, 2) >= 0 && strncmp(ptr + 1, rigth_code_border, 2) <= 0))
 			{
+				cout << "parse encode"<<endl;
 				code[0] = *(++ptr);
 				code[1] = *(++ptr);
-				*tmp = (char) strtol(code, 0, 16);
-				tmp++;
+				decode = (char) strtol(code, 0, 16);
+				if (decode == ' ' || decode == '-' || decode == '_' || decode == '.')
+				{
+					*tmp++ = decode; //ПРОВЕРИТЬ
+				}
 				ptr++;
 				continue;
 			}
 		}
+
+		if (*ptr == '?') break;
 		*tmp = *ptr;
 		tmp++;
 		ptr++;
 	}
+	return result;
 }
 
 

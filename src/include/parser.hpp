@@ -23,7 +23,7 @@ private:
 	bool is_valid_url (std::string url);
 
 	bool parse_first_line(std::string &str);
-	std::string get_valid_uri(std::string &str);
+	std::string get_valid_url(std::string &str);
 
 private:
 
