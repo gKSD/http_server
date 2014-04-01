@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 
+
 #include "include/parser.hpp"
 
 using namespace std;
@@ -200,40 +201,45 @@ string Parser::get_valid_url(string &str)
 
 	char url[MAX_LENGTH] = {0};
 	char *tmp = url;
-	char decode;
+	//char decode;
 	char code[3];//, decode;
 
 	memset(url, 0, MAX_LENGTH);
 
 	while(ptr != ptr_end)
 	{
-		if (*ptr == '!' || *ptr == ';' || *ptr == '\"' || *ptr == '#' || *ptr == '&' || *ptr == '\'' || *ptr == '*' ||
-				*ptr == '<' || *ptr == '>' || *ptr == '?' || *ptr == '`' || *ptr == '|')
-			return "/";
-
 		if (*ptr == '%')
 		{
-			if ((ptrdiff_t)(ptr_end-ptr) > 2 && (strncmp(ptr + 1,  left_code_border, 2) >= 0 && strncmp(ptr + 1, rigth_code_border, 2) <= 0))
+			if ((ptrdiff_t)(ptr_end - ptr) > 2)
 			{
 				cout << "parse encode"<<endl;
 				code[0] = *(++ptr);
 				code[1] = *(++ptr);
-				decode = (char) strtol(code, 0, 16);
-				if (decode == ' ' || decode == '-' || decode == '_' || decode == '.')
-				{
-					*tmp++ = decode; //ПРОВЕРИТЬ
-				}
+				code[2] = '\0';
+				long lcode = strtol(code, 0, 16);
+				if ((lcode >= 0x21 &&  lcode <= 0x23) || lcode == 0x26 || lcode == 0x27 || lcode == 0x2a || lcode == 0x3b || lcode == 0x3c || lcode == 0x3e ||
+						lcode == 0x3f || lcode == 0x60 || lcode == 0x7c)
+					return "/";
+				*tmp = (char) lcode; //ПРОВЕРИТЬ
+				tmp++;
 				ptr++;
 				continue;
 			}
 		}
 
 		if (*ptr == '?') break;
+
+		if (*ptr == '!' || *ptr == ';' || *ptr == '\"' || *ptr == '#' || *ptr == '&' || *ptr == '\'' || *ptr == '*' ||
+						*ptr == '<' || *ptr == '>' || *ptr == '?' || *ptr == '`' || *ptr == '|')
+			return "/";
+
 		*tmp = *ptr;
 		tmp++;
 		ptr++;
 	}
-	return result;
+	cout << url <<endl;
+
+	return url;
 }
 
 
