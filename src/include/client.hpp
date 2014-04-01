@@ -66,8 +66,7 @@ private:
 
 	std::vector<boost::shared_ptr<boost::thread> > _threads;
 
-
-	Parser parser;
+	Parser _parser;
 };
 
 #endif /* CLIENT_HPP_ */

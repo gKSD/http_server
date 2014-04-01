@@ -19,7 +19,8 @@ Client::Client(const std::string& address, const std::string& port, std::size_t 
 		_document_root(document_root),
 		_strand(_io_service), //connection
 		_socket(), //_socket(_io_service)  //connection
-		_threads()
+		_threads(),
+		_parser()
 {
 	//_socket.reset(new connection(io_service_, request_handler_));
 
@@ -73,16 +74,14 @@ void Client::start_accept()
 
 void Client::handle_accept(const boost::system::error_code& error)
 {
-	if (error)
+	if (!error)
 	{
-		std::cout<< "handle_accept error" << std::endl;
-		this->start_accept();
-	}
-	else
-	{
-		std::cout<< "handle accept !error" << std::endl;
+		std::cout<< "handle accept 1" << std::endl;
 		this->start_connection();
 	}
+
+	std::cout<< "handle_accept 2" << std::endl;
+	this->start_accept();
 
 	std::cout<<"endof handle_accept"<<std::endl;
 }
@@ -133,12 +132,16 @@ void Client::start_connection()
 
 void Client::handle_read(const boost::system::error_code& error, std::size_t bytes_transferred)
 {
-	std::cout<< "handle read" << std::endl;
+	std::cout<< "handle read 1" << std::endl;
 	if (error) return;
+	std::cout<< "handle read 2" << std::endl;
 
 	bool result;
 
 	std::cout<<_buffer<<std::endl;
+
+	_parser.parse(_buffer);
+
 	//boost::tribool result;
 	//boost::tie(result, boost::tuples::ignore) = request_parser_.parse(request_, buffer_.data(), buffer_.data() + bytes_transferred);
 

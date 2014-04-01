@@ -9,8 +9,17 @@
 #define HTTPPROTOCOL_HPP_
 
 #include <map>
+#include <string>
 
 typedef std::map< std::string, std::string> str_to_str_map;
+
+enum size_paramters { MAX_LENGTH = 65535 };
+
+const char rigth_code_border[3] = "7A";
+const char left_code_border[3] = "20";
+
+const std::string method_GET = "GET";
+const std::string method_POST = "POST";
 
 namespace response
 {
@@ -21,58 +30,32 @@ enum status_type
 	not_found = 404,
 	method_not_allowed = 405,
 	internal_server_error = 500
-} status;
-
-
-const std::string ok_string = "HTTP/1.0 200 OK\r\n";
-const std::string not_found_string = "HTTP/1.0 404 Not Found\r\n";
-const std::string method_not_allowed_string = "HTTP/1.0 405 Method Not Allowed";
-const std::string internal_server_error_string = "HTTP/1.0 500 Internal Server Error\r\n";
-
-static std::string get_status_string (status_type type)
-{
-	switch (type)
-	{
-	case (ok):
-			return ok_string;
-	case (not_found):
-			return not_found_string;
-	case (method_not_allowed):
-			return method_not_allowed_string;
-	default:
-		return internal_server_error_string;
-	}
-}
-
-str_to_str_map response;
-
-} //namespace reply
-
-
-struct content_type
-{
-  const char* extension;
-  const char* mime_type;
 };
 
-content_type_vector[] =
+std::string get_status_string (status_type type);
+
+
+struct response
 {
-  { "gif", "image/gif" },
-  { "htm", "text/html" },
-  { "html", "text/html" },
-  { "jpg", "image/jpeg" },
-  { "png", "image/png" },
-  { "jpeg", "image/jpeg" },
-  { "swf", "application/x-shockwave-flash" },
-  { "js", "script/javascript" },
-  { "css", "text/css" },
-  { 0, 0 } // Marks end of list.
+	str_to_str_map headers;
 };
+
+} //namespace response
+
+
+std::string get_content_type(std::string extension);
+bool is_valid_header (std::string header);
 
 namespace request
 {
 
-str_to_str_map request;
+struct request
+{
+	std::string method;
+	std::string uri;
+	std::string protocol;
+	str_to_str_map headers;
+};
 
 } //namespace request
 

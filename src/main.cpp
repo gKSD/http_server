@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
 
 		string address = "localhost";
 		string port = "8086";
-		string document_root = "/home/sofia/programs/eclipse/my_http_server/doc_root";
+		string document_root = "/home/sofia/static/"; //"/home/sofia/programs/eclipse/my_http_server/doc_root";
 		size_t thread_count = 1;
 
 	    //Client client(address, port, thread_count, document_root);
