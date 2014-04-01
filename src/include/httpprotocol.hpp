@@ -20,6 +20,7 @@ const char left_code_border[3] = "20";
 
 const std::string method_GET = "GET";
 const std::string method_POST = "POST";
+const std::string method_HEAD = "HEAD";
 
 namespace response
 {

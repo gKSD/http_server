@@ -22,11 +22,20 @@ private:
 
 	bool is_valid_url (std::string url);
 
+	bool parse_first_line(std::string &str);
+	std::string get_valid_uri(std::string &str);
+
 private:
 
 	request::request _request;
-	bool _is_valid_url;
-	bool _is_supported_protocol;
+
+	bool _f_is_valid_url;
+	bool _f_is_supported_protocol;
+	bool _f_is_supported_method;
+
+	bool _f_has_method;
+	bool _f_has_url;
+	bool _f_has_protocol;
 
 	response::response _response;
 };
