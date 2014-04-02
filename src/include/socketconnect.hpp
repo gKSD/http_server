@@ -16,10 +16,11 @@
 
 #include "parser.hpp"
 
+
 class socket_connect: public boost::enable_shared_from_this<socket_connect>, private boost::noncopyable
 {
 public:
-	socket_connect(boost::asio::io_service& io_service);
+	socket_connect(boost::asio::io_service& io_service, Parser &parser);
 	virtual ~socket_connect();
 
 	boost::asio::ip::tcp::socket& socket()

@@ -12,25 +12,19 @@ const std::string not_found_string = "HTTP/1.0 404 Not Found\r\n";
 const std::string method_not_allowed_string = "HTTP/1.0 405 Method Not Allowed";
 const std::string internal_server_error_string = "HTTP/1.0 500 Internal Server Error\r\n";
 
-std::string get_status_string (response::status_type type)
-{
-	switch (type)
-	{
-	case (response::ok):
-			return ok_string;
-	case (response::not_found):
-			return not_found_string;
-	case (response::method_not_allowed):
-			return method_not_allowed_string;
-	default:
-		return internal_server_error_string;
-	}
-}
+//const std::string ok_content = "";
+//const std::string not_found_content = "<html> <head></head> <body> <img src='/image.jpg'></body> </html>";
+//const std::string not_found_content = "<html> <head> <h1>404</h1> </head> <body></body> </html>";
+//const std::string method_not_allowed_content = "<html> <head><h1>405</h1></head> <body></body> </html>";
+//const std::string internal_server_error_content = "<html> <head><h1>500</h1></head> <body></body> </html>";
+
+
+
 
 bool is_valid_header (std::string header)
 {
 	return (header == "Host" || header == "User-Agent" || header == "Accept" || header == "Accept-Language" ||
-			header == "Accept-Encoding" || header == "Cookie" || header == "Connection");
+			header == "Accept-Encoding" || header == "Cookie" || header == "Connection" || header == "Date");
 }
 
 /*struct content_type
@@ -53,7 +47,7 @@ std::string get_content_type(std::string extension)
 	if (extension == "png") return "image/png";
 	if (extension == "jpeg") return "image/jpeg";
 	if (extension == "swf") return "application/x-shockwave-flash";
-	if (extension == "js") return "script/javascript";
+	if (extension == "js") return "text/javascript";
 	if (extension == "css") return "text/css";
 
 	return "application/octet-stream";

@@ -16,7 +16,8 @@ Client::Client(const std::string& address, const std::string& port, std::size_t 
 		_port(port),
 		_address(address),
 		_thread_count(thread_count),
-		_document_root(document_root)
+		_document_root(document_root),
+		_parser(_document_root)
 		//_strand(), //(_io_service), //connection
 		//_socket(), //_socket(_io_service)  //connection
 		//_threads(),
@@ -51,8 +52,7 @@ Client::~Client()
 	// TODO Auto-generated destructor stub
 }
 
-void Client::handle_connect(const boost::system::error_code& error,
-		  boost::asio::ip::tcp::resolver::iterator endpoint_iterator)
+void Client::handle_connect(const boost::system::error_code& error, boost::asio::ip::tcp::resolver::iterator endpoint_iterator)
 {
 
 }
@@ -69,7 +69,7 @@ void Client::start_accept()
 	//_socket.reset(new boost::asio::ip::tcp::socket(_io_service));
 	//_strand.reset(new boost::asio::io_service::strand(_io_service));
 
-	_socket_connect.reset(new socket_connect(_io_service));
+	_socket_connect.reset(new socket_connect(_io_service, _parser));
 
 	_acceptor.async_accept(_socket_connect->socket(), boost::bind(&Client::handle_accept, this, boost::asio::placeholders::error));
 	std::cout<<"endof start_accept"<<std::endl;
@@ -81,7 +81,7 @@ void Client::handle_accept(const boost::system::error_code& error)
 	{
 		std::cout<< "handle accept 1" << std::endl;
 		//this->start_connection();
-		_socket_connect->start();
+		_socket_connect->start_connection();
 	}
 
 	std::cout<< "handle_accept 2" << std::endl;

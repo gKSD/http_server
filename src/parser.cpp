@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <fstream>
 
 #include <vector>
 
@@ -20,29 +21,37 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
-
+//#include <string>
 
 #include "include/parser.hpp"
+#include "include/httpprotocol.hpp"
 
 using namespace std;
-Parser::Parser() :
+
+Parser::Parser(string document_root) :
 		_request(),
-		_f_is_valid_url(true),
 		_f_is_supported_protocol(true),
 		_f_is_supported_method(true),
 		_f_has_method(true),
 		_f_has_url(true),
-		_f_has_protocol(true)
+		_f_has_protocol(true),
+		_f_is_GET_method(false),
+		_f_is_POST_method(false),
+		_f_is_HEAD_method(false),
+		_document_root(document_root)
 {}
 
-bool Parser::reset()
+void Parser::reset()
 {
-	_f_is_valid_url = true;
 	_f_is_supported_protocol = true;
 	_f_is_supported_method  = true;
 	_f_has_method = true;
 	_f_has_url = true;
 	_f_has_protocol = true;
+
+	_f_is_GET_method = false;
+	_f_is_POST_method = false;
+	_f_is_HEAD_method = false;
 
 	_request.headers.clear();
 	_request.url.clear();
@@ -50,6 +59,7 @@ bool Parser::reset()
 	_request.protocol.clear();
 
 	_response.headers.clear();
+	_response.body.clear();
 }
 
 bool Parser::parse(const string& request)
@@ -117,7 +127,21 @@ bool Parser::parse_first_line(string &str)
 	}
 
 	if (!((*it).compare(method_GET) == 0 || (*it).compare(method_POST) == 0 || (*it).compare(method_HEAD) == 0 )) _f_has_method = false;
-	if ((*it).compare(method_GET) != 0) _f_is_supported_method = false;
+	if ((*it).compare(method_POST) == 0)
+	{
+		_f_is_supported_method = true;
+		_f_is_GET_method = true;
+	}
+	else if ((*it).compare(method_POST) == 0)
+	{
+		_f_is_supported_method = false;
+		_f_is_POST_method = true;
+	}
+	else if ((*it).compare(method_HEAD) == 0)
+	{
+		_f_is_supported_method = false;
+		_f_is_HEAD_method = true;
+	}
 
 	_request.method = *it;
 
@@ -248,7 +272,114 @@ string Parser::get_valid_url(string &str)
 	return url;
 }
 
+response::status_type Parser::make_response()
+{
+	if (_f_has_method && _f_is_supported_method)
+	{
+		if (_f_is_GET_method)
+		{
+			//if (_f_has_protocol)
+			if(!_f_has_url)
+			{
+				//405
+				form_response(response::method_not_allowed);
+				return response::method_not_allowed;
+			}
 
+			string path_to_file = _document_root;
+			path_to_file.append(_request.url);
+			if (_request.url[_request.url.size() - 1] == '/')
+				path_to_file.append("index.html");
+
+			std::ifstream is(path_to_file.c_str(), std::ios::in | std::ios::binary);
+			if (!is)
+			{
+				//404
+				form_response(response::not_found);
+				return response::not_found;
+			}
+
+			char buffer[buffer_length];
+			while (is.read(buffer, sizeof(buffer)).gcount() > 0)
+				_response.body.append(buffer, is.gcount());
+
+			//формируем заголовки. Тело ответа уже сформировано.
+			form_response(response::ok);
+			return response::ok;
+		}
+		else if (_f_is_POST_method)
+		{
+			//405
+			form_response(response::method_not_allowed);
+			return response::method_not_allowed;
+		}
+		else if (_f_is_HEAD_method)
+		{
+			//405
+			form_response(response::method_not_allowed);
+			return response::method_not_allowed;
+		}
+		else
+		{
+			//405
+			form_response(response::method_not_allowed);
+			return response::method_not_allowed;
+		}
+	}
+	else
+	{
+		//405
+		form_response(response::method_not_allowed);
+		return response::method_not_allowed;
+	}
+}
+
+void Parser::form_response(response::status_type status)
+{
+	if (status == response::not_found || status == response::internal_server_error || status == response::method_not_allowed)
+		_response.body.append(get_content_string_by_status(status));
+
+	cout << "Response body: " << _response.body <<endl;
+
+	//char body_size [50];
+	//itoa(_response.body.size(),body_size,10);
+
+	_request.headers.insert(std::pair<string,string>("Date", "123123"));
+	_request.headers.insert(std::pair<string,string>("Server", "1asdasdasd"));
+	//_request.headers.insert(std::pair<string,string>("Content-Length", body_size));
+	_request.headers.insert(std::pair<string,string>("Content-Type", "dfgdfg"));
+	_request.headers.insert(std::pair<string,string>("Connection", "ololo"));
+}
+
+std::string Parser::get_content_string_by_status(response::status_type type)
+{
+	switch (type)
+	{
+	case (response::ok):
+			return ok_content;
+	case (response::not_found):
+			return not_found_content;
+	case (response::method_not_allowed):
+			return method_not_allowed_content;
+	default:
+			return internal_server_error_content;
+	}
+}
+
+std::string Parser::get_status_string (response::status_type type)
+{
+	switch (type)
+	{
+	case (response::ok):
+			return ok_string;
+	case (response::not_found):
+			return not_found_string;
+	case (response::method_not_allowed):
+			return method_not_allowed_string;
+	default:
+		return internal_server_error_string;
+	}
+}
 
 //необходимо возращать 405 если: POST, не поддерживаемый протокол
 //возращаем index.html если урл задан /  или содержится невалидный урл

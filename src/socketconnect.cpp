@@ -10,12 +10,12 @@
 #include <vector>
 #include <boost/bind.hpp>
 
-socket_connect::socket_connect(boost::asio::io_service& io_service)
+socket_connect::socket_connect(boost::asio::io_service& io_service,  Parser &parser)
 	:_strand(io_service),
 	 _socket(io_service),
-	 _parser()
+	 _parser(parser)
 {
-	_parser->reset();
+	_parser.reset();
 }
 
 socket_connect::~socket_connect()
@@ -39,6 +39,7 @@ void socket_connect::handle_read(const boost::system::error_code& error, std::si
 	std::cout<<_buffer<<std::endl;
 
 	_parser.parse(_buffer);
+	_parser.make_response();
 }
 
 void socket_connect::handle_write(const boost::system::error_code& error)

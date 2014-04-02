@@ -27,7 +27,7 @@ class Client :  public boost::enable_shared_from_this<Client>,  private boost::n
 {
 public:
 
-	explicit Client(const std::string& address, const std::string& port, std::size_t thread_count,  const std::string& document_root);
+	Client(const std::string& address, const std::string& port, std::size_t thread_count,  const std::string& document_root);
 	virtual ~Client();
 
 	void run();
@@ -58,6 +58,7 @@ private:
 	std::string _document_root;
 
 	 boost::shared_ptr<socket_connect> _socket_connect;
+	 Parser _parser;
 };
 
 #endif /* CLIENT_HPP_ */
