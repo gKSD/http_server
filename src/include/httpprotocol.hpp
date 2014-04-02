@@ -58,6 +58,7 @@ struct response
 	std::string status_string;
 	std::vector<std::string> headers;
 	std::string body;
+	std::string file_extension;
 };
 
 

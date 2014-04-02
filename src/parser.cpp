@@ -127,7 +127,7 @@ bool Parser::parse_first_line(std::string &str)
 	}
 
 	if (!((*it).compare(method_GET) == 0 || (*it).compare(method_POST) == 0 || (*it).compare(method_HEAD) == 0 )) _f_has_method = false;
-	if ((*it).compare(method_POST) == 0)
+	if ((*it).compare(method_GET) == 0)
 	{
 		_f_is_supported_method = true;
 		_f_is_GET_method = true;
@@ -218,7 +218,11 @@ std::string Parser::get_valid_url(std::string &str)
 				long lcode = strtol(code, 0, 16);
 				if ((lcode >= 0x21 &&  lcode <= 0x23) || lcode == 0x26 || lcode == 0x27 || lcode == 0x2a || lcode == 0x3b || lcode == 0x3c || lcode == 0x3e ||
 						lcode == 0x3f || lcode == 0x60 || lcode == 0x7c)
-					return "/";
+				{
+					url[0] = '/';
+					url[0] = '\0';
+					break;
+				}
 				*tmp = (char) lcode; //ПРОВЕРИТЬ
 				tmp++;
 				ptr++;
@@ -242,7 +246,11 @@ std::string Parser::get_valid_url(std::string &str)
 				{
 					nesting_counter++;
 					if (nesting_counter > slash_counter)
-						return "/";
+					{
+						url[0] = '/';
+						url[0] = '\0';
+						break;
+					}
 					cursor += 3;
 				}
 
@@ -261,26 +269,54 @@ std::string Parser::get_valid_url(std::string &str)
 		}
 		else if (*ptr == '!' || *ptr == ';' || *ptr == '\"' || *ptr == '#' || *ptr == '&' || *ptr == '\'' || *ptr == '*' ||
 						*ptr == '<' || *ptr == '>' || *ptr == '?' || *ptr == '`' || *ptr == '|')
-			return "/";
+		{
+			url[0] = '/';
+			url[0] = '\0';
+			break;
+		}
 
 		*tmp = *ptr;
 		tmp++;
 		ptr++;
 	}
+
+	result = url;
+
+	if (result[result.size() - 1] == '/')
+		result.append("index.html");
 	std::cout <<"&& "<< url <<std::endl;
+
+	//получаем расширение запрашиваемого файла
+
+    size_t dot_pos = result.rfind('.');
+    std::cout << "found at: " << dot_pos << '\n';
+
+    size_t slash_pos = result.rfind('/');
+    std::cout << "found at: " << slash_pos << '\n';
+
+    if (dot_pos > slash_pos)
+    {
+    	for (int j = dot_pos + 1; j < result.length(); j++ )
+    		_response.file_extension.push_back(result[j]);
+    }
+    std::cout <<"File extension: "<< _response.file_extension<<std::endl;
 
 	return url;
 }
 
 response::status_type Parser::make_response()
 {
+	std::cout << "Parer make response" <<std::endl;
 	if (_f_has_method && _f_is_supported_method)
 	{
+		std::cout << "has method and support" <<std::endl;
 		if (_f_is_GET_method)
 		{
+			std::cout << "is GET method" <<std::endl;
 			//if (_f_has_protocol)
 			if(!_f_has_url)
 			{
+				std::cout << "! has url" <<std::endl;
 				//405
 				form_response(response::method_not_allowed);
 				return response::method_not_allowed;
@@ -288,8 +324,6 @@ response::status_type Parser::make_response()
 
 			std::string path_to_file = _document_root;
 			path_to_file.append(_request.url);
-			if (_request.url[_request.url.size() - 1] == '/')
-				path_to_file.append("index.html");
 
 			std::ifstream is(path_to_file.c_str(), std::ios::in | std::ios::binary);
 			if (!is)
@@ -357,10 +391,10 @@ void Parser::form_response(response::status_type status)
 	_response.headers.push_back("http_server");
 
 	_response.headers.push_back("Content-Length");
-	_response.headers.push_back("body_size");
+	_response.headers.push_back(body_size);
 
-	//_response.headers.push_back("Content-Type");
-	//_response.headers.push_back("dfgdfg");
+	_response.headers.push_back("Content-Type");
+	_response.headers.push_back(get_content_type(_response.file_extension));
 
 	_response.headers.push_back("Connection");
 	_response.headers.push_back("close");
@@ -423,10 +457,10 @@ std::vector<boost::asio::const_buffer> Parser::format_response_to_send_it_to_soc
 		buffer.push_back(boost::asio::buffer(":"));
 
 		buffer.push_back(boost::asio::buffer(_response.headers[i + 1]));
-		buffer.push_back(boost::asio::buffer("\n\r"));
+		buffer.push_back(boost::asio::buffer("\r\n\r\n"));
 	}
 
-	buffer.push_back(boost::asio::buffer("\n\r"));
+	buffer.push_back(boost::asio::buffer("\r\n\r\n"));
 	buffer.push_back(boost::asio::buffer(_response.body));
 
 	return buffer;
