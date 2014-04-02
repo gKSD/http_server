@@ -159,6 +159,25 @@ bool Parser::parse_first_line(std::string &str)
 			std::cout << "correct"<<std::endl;
 			_f_has_url = true;
 			_request.url = get_valid_url(*it);
+			if (_request.url[_request.url.size() - 1] == '/')
+				_request.url.append("index.html");
+			std::cout <<"url --> "<< _request.url <<std::endl;
+
+
+			//получаем расширение запрашиваемого файла
+
+			size_t dot_pos = _request.url.rfind('.');
+			std::cout << "found at: " << dot_pos << '\n';
+
+			size_t slash_pos = _request.url.rfind('/');
+			std::cout << "found at: " << slash_pos << '\n';
+
+			if (dot_pos > slash_pos)
+			{
+				for (int j = dot_pos + 1; j < _request.url.length(); j++ )
+					_response.file_extension.push_back(_request.url[j]);
+			}
+			std::cout <<"File extension: "<< _response.file_extension<<std::endl;
 		}
 		else
 		{
@@ -191,7 +210,7 @@ bool Parser::parse_first_line(std::string &str)
 
 std::string Parser::get_valid_url(std::string &str)
 {
-	std::string result;
+	//std::string result;
 
 	const char *ptr = str.c_str();
 	const char *ptr_end =  ptr + str.length();
@@ -218,11 +237,8 @@ std::string Parser::get_valid_url(std::string &str)
 				long lcode = strtol(code, 0, 16);
 				if ((lcode >= 0x21 &&  lcode <= 0x23) || lcode == 0x26 || lcode == 0x27 || lcode == 0x2a || lcode == 0x3b || lcode == 0x3c || lcode == 0x3e ||
 						lcode == 0x3f || lcode == 0x60 || lcode == 0x7c)
-				{
-					url[0] = '/';
-					url[0] = '\0';
-					break;
-				}
+				return "/";
+
 				*tmp = (char) lcode; //ПРОВЕРИТЬ
 				tmp++;
 				ptr++;
@@ -239,20 +255,22 @@ std::string Parser::get_valid_url(std::string &str)
 
 			if ((ptrdiff_t)(ptr_end - ptr) > 2 && *ptr == '.')
 			{
+				std::cout<< "../ was found"<<std::endl;
 				const char *cursor = ptr;
 				int nesting_counter = 0;
+				bool flag = true;
 
-				while ( (ptrdiff_t)(ptr_end - cursor) > 2 && strncmp (cursor, "../", 3) == 0)
+				while ( (ptrdiff_t)(ptr_end - cursor) > 2 && strncmp (cursor, "../", 3) == 0 && flag)
 				{
+					std::cout<< "cycle for ../ was found"<<std::endl;
 					nesting_counter++;
+					std::cout<< "nesting_counter = "<< nesting_counter << " and slash_counter = "<< slash_counter<<std::endl;
 					if (nesting_counter > slash_counter)
-					{
-						url[0] = '/';
-						url[0] = '\0';
-						break;
-					}
+						return "/";
 					cursor += 3;
 				}
+
+				if (flag) break;
 
 				while( ptr != cursor)
 				{
@@ -269,44 +287,20 @@ std::string Parser::get_valid_url(std::string &str)
 		}
 		else if (*ptr == '!' || *ptr == ';' || *ptr == '\"' || *ptr == '#' || *ptr == '&' || *ptr == '\'' || *ptr == '*' ||
 						*ptr == '<' || *ptr == '>' || *ptr == '?' || *ptr == '`' || *ptr == '|')
-		{
-			url[0] = '/';
-			url[0] = '\0';
-			break;
-		}
+			return "/";
 
 		*tmp = *ptr;
 		tmp++;
 		ptr++;
 	}
 
-	result = url;
-
-	if (result[result.size() - 1] == '/')
-		result.append("index.html");
-	std::cout <<"&& "<< url <<std::endl;
-
-	//получаем расширение запрашиваемого файла
-
-    size_t dot_pos = result.rfind('.');
-    std::cout << "found at: " << dot_pos << '\n';
-
-    size_t slash_pos = result.rfind('/');
-    std::cout << "found at: " << slash_pos << '\n';
-
-    if (dot_pos > slash_pos)
-    {
-    	for (int j = dot_pos + 1; j < result.length(); j++ )
-    		_response.file_extension.push_back(result[j]);
-    }
-    std::cout <<"File extension: "<< _response.file_extension<<std::endl;
-
+	//result = url;
 	return url;
 }
 
 response::status_type Parser::make_response()
 {
-	std::cout << "Parer make response" <<std::endl;
+	std::cout << "Parser make response" <<std::endl;
 	if (_f_has_method && _f_is_supported_method)
 	{
 		std::cout << "has method and support" <<std::endl;
@@ -457,10 +451,10 @@ std::vector<boost::asio::const_buffer> Parser::format_response_to_send_it_to_soc
 		buffer.push_back(boost::asio::buffer(":"));
 
 		buffer.push_back(boost::asio::buffer(_response.headers[i + 1]));
-		buffer.push_back(boost::asio::buffer("\r\n\r\n"));
+		buffer.push_back(boost::asio::buffer("\r\n"));
 	}
 
-	buffer.push_back(boost::asio::buffer("\r\n\r\n"));
+	buffer.push_back(boost::asio::buffer("\r\n"));
 	buffer.push_back(boost::asio::buffer(_response.body));
 
 	return buffer;
