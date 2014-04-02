@@ -7,10 +7,10 @@
 
 #include "include/httpprotocol.hpp"
 
-const std::string ok_string = "HTTP/1.0 200 OK\r\n";
-const std::string not_found_string = "HTTP/1.0 404 Not Found\r\n";
-const std::string method_not_allowed_string = "HTTP/1.0 405 Method Not Allowed";
-const std::string internal_server_error_string = "HTTP/1.0 500 Internal Server Error\r\n";
+//const std::string ok_string = "HTTP/1.0 200 OK\r\n";
+//const std::string not_found_string = "HTTP/1.0 404 Not Found\r\n";
+//const std::string method_not_allowed_string = "HTTP/1.0 405 Method Not Allowed";
+//const std::string internal_server_error_string = "HTTP/1.0 500 Internal Server Error\r\n";
 
 //const std::string ok_content = "";
 //const std::string not_found_content = "<html> <head></head> <body> <img src='/image.jpg'></body> </html>";

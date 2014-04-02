@@ -50,12 +50,13 @@ enum status_type
 	internal_server_error = 500,
 };
 
-std::string get_status_string (status_type type);
+//std::string get_status_string (status_type type);
 //std::string get_content_string_by_status(status_type type);
 
 struct response
 {
-	str_to_str_map headers;
+	std::string status_string;
+	std::vector<std::string> headers;
 	std::string body;
 };
 

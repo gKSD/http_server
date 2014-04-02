@@ -21,14 +21,14 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <stdio.h>
 //#include <string>
 
 #include "include/parser.hpp"
 #include "include/httpprotocol.hpp"
 
-using namespace std;
 
-Parser::Parser(string document_root) :
+Parser::Parser(std::string document_root) :
 		_request(),
 		_f_is_supported_protocol(true),
 		_f_is_supported_method(true),
@@ -62,32 +62,32 @@ void Parser::reset()
 	_response.body.clear();
 }
 
-bool Parser::parse(const string& request)
+bool Parser::parse(const std::string& request)
 {
-	cout<< "Parser \n "<< request << endl;
+	std::cout<< "Parser \n "<< request << std::endl;
 
-	stringstream stream_request(request);
+	std::stringstream stream_request(request);
 
-	string line;
+	std::string line;
 	//1) парсим метод, урл и протокол
 	//остальные заголовки ниже отдельно
 	if (getline(stream_request, line)) parse_first_line(line);
 	else return false; //&&&&&&
 
-	cout <<"Method: "<< _request.method<<endl;
-	cout <<"URL: " << _request.url<<endl;
-	cout <<"Protocol: " << _request.protocol<<endl;
+	std::cout <<"Method: "<< _request.method<<std::endl;
+	std::cout <<"URL: " << _request.url<<std::endl;
+	std::cout <<"Protocol: " << _request.protocol<<std::endl;
 
 	//парсим остальные заголовки
 	while (getline(stream_request, line))
 	{
-		vector<string> tokens;
+		std::vector<std::string> tokens;
 		boost::split(tokens, line, boost::is_any_of(":"));
-		vector<string>::iterator it = tokens.begin();
+		std::vector<std::string>::iterator it = tokens.begin();
 		if (is_valid_header(*it))
 		{
-			string header = *it;
-			string value;
+			std::string header = *it;
+			std::string value;
 
 			it++;
 			value.append(*it);
@@ -98,25 +98,25 @@ bool Parser::parse(const string& request)
 				value.append(*it);
 			}
 
-			_request.headers.insert(std::pair<string,string>(header, value));
-			cout<<"** "<<header<< " => "<<_request.headers.at(header)<<endl;
+			_request.headers.insert(std::pair<std::string,std::string>(header, value));
+			std::cout<<"** "<<header<< " => "<<_request.headers.at(header)<<std::endl;
 		}
 	}
 
 	return true;
 }
 
-bool Parser::is_valid_url(string url)
+bool Parser::is_valid_url(std::string url)
 {
 	return true;
 }
 
-bool Parser::parse_first_line(string &str)
+bool Parser::parse_first_line(std::string &str)
 {
-	vector<string> tokens;
+	std::vector<std::string> tokens;
 	boost::split(tokens, str, boost::is_any_of(" \t\n\r"));
-	vector<string>::iterator it = tokens.begin();
-	cout<< "1: "<< *it<<endl;
+	std::vector<std::string>::iterator it = tokens.begin();
+	std::cout<< "1: "<< *it<<std::endl;
 
 	if (tokens.size() == 0)
 	{
@@ -148,7 +148,7 @@ bool Parser::parse_first_line(string &str)
 	it++;
 	if (it != tokens.end())
 	{
-		cout<< "2: "<< *it<<endl;
+		std::cout<< "2: "<< *it<<std::endl;
 		//boost::regex regex("(\/[\w\s\.]+)+\/?");
 		//boost::regex regex("/[0-9a-zA-Z_%\./-]*");
 		boost::regex regex("/[0-9a-zA-Z_%\./\!\"#\&\'\*\,\:\;\<\=\>\?\[\|\^\`\{\|\}-]*");
@@ -156,13 +156,13 @@ bool Parser::parse_first_line(string &str)
 		boost::smatch match_result;
 		if (boost::regex_match(*it,  match_result, regex))
 		{
-			cout << "correct";
+			std::cout << "correct"<<std::endl;
 			_f_has_url = true;
 			_request.url = get_valid_url(*it);
 		}
 		else
 		{
-			cout<< "incorrect";
+			std::cout<< "incorrect" << std::endl;
 			_f_has_url = false;
 			_request.url = "";
 		}
@@ -189,9 +189,9 @@ bool Parser::parse_first_line(string &str)
 	return true;
 }
 
-string Parser::get_valid_url(string &str)
+std::string Parser::get_valid_url(std::string &str)
 {
-	string result;
+	std::string result;
 
 	const char *ptr = str.c_str();
 	const char *ptr_end =  ptr + str.length();
@@ -211,7 +211,7 @@ string Parser::get_valid_url(string &str)
 		{
 			if ((ptrdiff_t)(ptr_end - ptr) > 2)
 			{
-				cout << "parse encode"<<endl;
+				std::cout << "parse encode"<<std::endl;
 				code[0] = *(++ptr);
 				code[1] = *(++ptr);
 				code[2] = '\0';
@@ -229,7 +229,7 @@ string Parser::get_valid_url(string &str)
 		else if (*ptr == '/')
 		{
 			//  /%20%20asda.jpeg
-			cout<< "qweqwe"<<endl;
+			std::cout<< "qweqwe"<<std::endl;
 			slash_counter++;
 			while (ptr != ptr_end && *ptr == '/') ptr++;
 
@@ -267,7 +267,7 @@ string Parser::get_valid_url(string &str)
 		tmp++;
 		ptr++;
 	}
-	cout << url <<endl;
+	std::cout <<"&& "<< url <<std::endl;
 
 	return url;
 }
@@ -286,7 +286,7 @@ response::status_type Parser::make_response()
 				return response::method_not_allowed;
 			}
 
-			string path_to_file = _document_root;
+			std::string path_to_file = _document_root;
 			path_to_file.append(_request.url);
 			if (_request.url[_request.url.size() - 1] == '/')
 				path_to_file.append("index.html");
@@ -304,6 +304,7 @@ response::status_type Parser::make_response()
 				_response.body.append(buffer, is.gcount());
 
 			//формируем заголовки. Тело ответа уже сформировано.
+			//200
 			form_response(response::ok);
 			return response::ok;
 		}
@@ -339,16 +340,43 @@ void Parser::form_response(response::status_type status)
 	if (status == response::not_found || status == response::internal_server_error || status == response::method_not_allowed)
 		_response.body.append(get_content_string_by_status(status));
 
-	cout << "Response body: " << _response.body <<endl;
+	std::cout << "Response body: " << _response.body <<std::endl;
 
-	//char body_size [50];
-	//itoa(_response.body.size(),body_size,10);
+	_response.status_string = get_status_string(status);
 
-	_request.headers.insert(std::pair<string,string>("Date", "123123"));
-	_request.headers.insert(std::pair<string,string>("Server", "1asdasdasd"));
-	//_request.headers.insert(std::pair<string,string>("Content-Length", body_size));
-	_request.headers.insert(std::pair<string,string>("Content-Type", "dfgdfg"));
-	_request.headers.insert(std::pair<string,string>("Connection", "ololo"));
+	char body_size [50];
+	sprintf(body_size, "%ld", _response.body.size());
+
+	std::cout<<"body_size "<<body_size<<std::endl;
+
+
+	//_response.headers.push_back("Date");
+	//_response.headers.push_back("123123");
+
+	_response.headers.push_back("Server");
+	_response.headers.push_back("http_server");
+
+	_response.headers.push_back("Content-Length");
+	_response.headers.push_back("body_size");
+
+	//_response.headers.push_back("Content-Type");
+	//_response.headers.push_back("dfgdfg");
+
+	_response.headers.push_back("Connection");
+	_response.headers.push_back("close");
+
+	/*
+	 *  HTTP/1.1 200 OK
+Server: nginx
+Date: Wed, 02 Apr 2014 17:23:54 GMT
+Content-Type: text/html; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+X-Powered-By: LiveStreet CMS
+Expires: Thu, 19 Nov 1981 08:52:00 GMT
+Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0
+Pragma: no-cache
+	 * */
 }
 
 std::string Parser::get_content_string_by_status(response::status_type type)
@@ -381,5 +409,30 @@ std::string Parser::get_status_string (response::status_type type)
 	}
 }
 
-//необходимо возращать 405 если: POST, не поддерживаемый протокол
-//возращаем index.html если урл задан /  или содержится невалидный урл
+
+std::vector<boost::asio::const_buffer> Parser::format_response_to_send_it_to_socket()
+{
+	std::vector<boost::asio::const_buffer> buffer;
+
+	buffer.push_back(boost::asio::buffer(_response.status_string));
+
+	std::size_t n = _response.headers.size();
+	for (std::size_t i = 0; i < n; i += 2)
+	{
+		buffer.push_back(boost::asio::buffer(_response.headers[i]));
+		buffer.push_back(boost::asio::buffer(":"));
+
+		buffer.push_back(boost::asio::buffer(_response.headers[i + 1]));
+		buffer.push_back(boost::asio::buffer("\n\r"));
+	}
+
+	buffer.push_back(boost::asio::buffer("\n\r"));
+	buffer.push_back(boost::asio::buffer(_response.body));
+
+	return buffer;
+}
+
+
+
+
+

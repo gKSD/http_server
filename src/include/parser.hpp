@@ -10,6 +10,8 @@
 
 #include "httpprotocol.hpp"
 
+#include <boost/asio.hpp>
+
 class Parser //httpprocessor
 {
 public:
@@ -19,6 +21,8 @@ public:
 
 	bool parse(const std::string& request);
 	response::status_type make_response();
+
+	std::vector<boost::asio::const_buffer> format_response_to_send_it_to_socket();
 
 private:
 

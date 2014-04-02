@@ -40,6 +40,9 @@ void socket_connect::handle_read(const boost::system::error_code& error, std::si
 
 	_parser.parse(_buffer);
 	_parser.make_response();
+
+	boost::asio::async_write(_socket, _parser.format_response_to_send_it_to_socket(),
+			_strand.wrap( boost::bind(&socket_connect::handle_write, shared_from_this(), boost::asio::placeholders::error)));
 }
 
 void socket_connect::handle_write(const boost::system::error_code& error)
