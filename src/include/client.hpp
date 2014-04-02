@@ -19,7 +19,9 @@
 
 #include "parser.hpp"
 
-enum { max_length = 1024 , buffer_length = 8192};
+#include "socketconnect.hpp"
+
+//enum { max_length = 1024 , buffer_length = 8192};
 
 class Client :  public boost::enable_shared_from_this<Client>,  private boost::noncopyable
 {
@@ -38,11 +40,11 @@ private:
 	void handle_stop();
 
 	//connection
-	boost::asio::ip::tcp::socket& socket();
+	//boost::asio::ip::tcp::socket& socket();
 
-	void start_connection();
-	void handle_read(const boost::system::error_code& error, std::size_t bytes_transferred);
-	void handle_write(const boost::system::error_code& error);
+	//void start_connection();
+	//void handle_read(const boost::system::error_code& error, std::size_t bytes_transferred);
+	//void handle_write(const boost::system::error_code& error);
 
 private:
 
@@ -50,23 +52,12 @@ private:
 	//boost::asio::ssl::context _context;
 	boost::asio::ip::tcp::acceptor _acceptor; //слушает входящие соединения
 
-	char _buffer [buffer_length];
-
 	std::string _port;
 	std::string _address;
 	std::size_t _thread_count;
 	std::string _document_root;
 
-	//from connection class
-	//boost::asio::io_service::strand _strand;
-	boost::shared_ptr<boost::asio::io_service::strand> _strand;
-
-	//boost::asio::ip::tcp::socket _socket;
-	boost::shared_ptr<boost::asio::ip::tcp::socket> _socket;
-
-	//std::vector<boost::shared_ptr<boost::thread> > _threads;
-
-	Parser _parser;
+	 boost::shared_ptr<socket_connect> _socket_connect;
 };
 
 #endif /* CLIENT_HPP_ */

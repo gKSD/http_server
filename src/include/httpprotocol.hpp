@@ -13,6 +13,8 @@
 
 typedef std::map< std::string, std::string> str_to_str_map;
 
+enum { max_length = 1024 , buffer_length = 8192};
+
 enum size_paramters { MAX_LENGTH = 65535 };
 
 const char rigth_code_border[3] = "7A";

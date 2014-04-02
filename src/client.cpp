@@ -16,11 +16,11 @@ Client::Client(const std::string& address, const std::string& port, std::size_t 
 		_port(port),
 		_address(address),
 		_thread_count(thread_count),
-		_document_root(document_root),
-		_strand(), //(_io_service), //connection
-		_socket(), //_socket(_io_service)  //connection
+		_document_root(document_root)
+		//_strand(), //(_io_service), //connection
+		//_socket(), //_socket(_io_service)  //connection
 		//_threads(),
-		_parser()
+		//_parser()
 {
 	//_socket.reset(new connection(io_service_, request_handler_));
 
@@ -66,10 +66,12 @@ void Client::start_accept()
 		_socket.open
 	}*/
 
-	_socket.reset(new boost::asio::ip::tcp::socket(_io_service));
-	_strand.reset(new boost::asio::io_service::strand(_io_service));
+	//_socket.reset(new boost::asio::ip::tcp::socket(_io_service));
+	//_strand.reset(new boost::asio::io_service::strand(_io_service));
 
-	_acceptor.async_accept(*_socket, boost::bind(&Client::handle_accept, shared_from_this(), boost::asio::placeholders::error));
+	_socket_connect.reset(new socket_connect(_io_service));
+
+	_acceptor.async_accept(_socket_connect->socket(), boost::bind(&Client::handle_accept, this, boost::asio::placeholders::error));
 	std::cout<<"endof start_accept"<<std::endl;
 }
 
@@ -78,7 +80,8 @@ void Client::handle_accept(const boost::system::error_code& error)
 	if (!error)
 	{
 		std::cout<< "handle accept 1" << std::endl;
-		this->start_connection();
+		//this->start_connection();
+		_socket_connect->start();
 	}
 
 	std::cout<< "handle_accept 2" << std::endl;
@@ -111,7 +114,7 @@ void Client::run()
 }
 
 //**************************************************************************************************
-
+/*
 boost::asio::ip::tcp::socket& Client::socket()
 {
 	return *_socket;
@@ -185,3 +188,4 @@ void Client::handle_write(const boost::system::error_code& error)
 	}
 	std::cout<<"endof handle_write"<<std::endl;
 }
+*/

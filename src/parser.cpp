@@ -33,8 +33,23 @@ Parser::Parser() :
 		_f_has_method(true),
 		_f_has_url(true),
 		_f_has_protocol(true)
-{
+{}
 
+bool Parser::reset()
+{
+	_f_is_valid_url = true;
+	_f_is_supported_protocol = true;
+	_f_is_supported_method  = true;
+	_f_has_method = true;
+	_f_has_url = true;
+	_f_has_protocol = true;
+
+	_request.headers.clear();
+	_request.url.clear();
+	_request.method.clear();
+	_request.protocol.clear();
+
+	_response.headers.clear();
 }
 
 bool Parser::parse(const string& request)
@@ -53,6 +68,7 @@ bool Parser::parse(const string& request)
 	cout <<"URL: " << _request.url<<endl;
 	cout <<"Protocol: " << _request.protocol<<endl;
 
+	//парсим остальные заголовки
 	while (getline(stream_request, line))
 	{
 		vector<string> tokens;
@@ -76,9 +92,6 @@ bool Parser::parse(const string& request)
 			cout<<"** "<<header<< " => "<<_request.headers.at(header)<<endl;
 		}
 	}
-
-	//парсим остальные заголовки
-
 
 	return true;
 }

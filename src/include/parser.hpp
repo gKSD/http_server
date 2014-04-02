@@ -18,6 +18,8 @@ public:
 
 	bool parse(const std::string& request);
 
+	bool reset();
+
 private:
 
 	bool is_valid_url (std::string url);
