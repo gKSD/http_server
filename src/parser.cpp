@@ -373,7 +373,7 @@ void Parser::form_response(response::status_type status)
 	_response.status_string = get_status_string(status);
 
 	char body_size [50];
-	sprintf(body_size, "%ld", _response.body.size());
+	sprintf(body_size, "%ld\r\n", _response.body.size());
 
 	std::cout<<"body_size "<<body_size<<std::endl;
 
@@ -382,16 +382,16 @@ void Parser::form_response(response::status_type status)
 	//_response.headers.push_back("123123");
 
 	_response.headers.push_back("Server");
-	_response.headers.push_back("http_server");
+	_response.headers.push_back("http_server\r\n");
 
 	_response.headers.push_back("Content-Length");
 	_response.headers.push_back(body_size);
 
 	_response.headers.push_back("Content-Type");
-	_response.headers.push_back(get_content_type(_response.file_extension));
+	_response.headers.push_back((get_content_type(_response.file_extension)+"\r\n"));
 
 	_response.headers.push_back("Connection");
-	_response.headers.push_back("close");
+	_response.headers.push_back("close\r\n");
 
 	/*
 	 *  HTTP/1.1 200 OK
@@ -451,7 +451,7 @@ std::vector<boost::asio::const_buffer> Parser::format_response_to_send_it_to_soc
 		buffer.push_back(boost::asio::buffer(":"));
 
 		buffer.push_back(boost::asio::buffer(_response.headers[i + 1]));
-		buffer.push_back(boost::asio::buffer("\r\n"));
+		//buffer.push_back(boost::asio::buffer("\r\n"));
 	}
 
 	buffer.push_back(boost::asio::buffer("\r\n"));
