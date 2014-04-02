@@ -63,7 +63,14 @@ bool Parser::parse(const string& request)
 			string header = *it;
 			string value;
 
-			for(it++;it != tokens.end(); it++) value.append(*it);
+			it++;
+			value.append(*it);
+
+			for(it++; it != tokens.end(); it++)
+			{
+				value.push_back(':');
+				value.append(*it);
+			}
 
 			_request.headers.insert(std::pair<string,string>(header, value));
 			cout<<"** "<<header<< " => "<<_request.headers.at(header)<<endl;
@@ -157,6 +164,8 @@ string Parser::get_valid_url(string &str)
 	//char decode;
 	char code[3];//, decode;
 
+	int slash_counter = -1; //первый слеш мы не считаем /qq/ww/1.jpg
+
 	memset(url, 0, MAX_LENGTH);
 
 	while(ptr != ptr_end)
@@ -179,10 +188,41 @@ string Parser::get_valid_url(string &str)
 				continue;
 			}
 		}
+		else  if (*ptr == '?') break;
+		else if (*ptr == '/')
+		{
+			//  /%20%20asda.jpeg
+			cout<< "qweqwe"<<endl;
+			slash_counter++;
+			while (ptr != ptr_end && *ptr == '/') ptr++;
 
-		if (*ptr == '?') break;
+			if ((ptrdiff_t)(ptr_end - ptr) > 2 && *ptr == '.')
+			{
+				const char *cursor = ptr;
+				int nesting_counter = 0;
 
-		if (*ptr == '!' || *ptr == ';' || *ptr == '\"' || *ptr == '#' || *ptr == '&' || *ptr == '\'' || *ptr == '*' ||
+				while ( (ptrdiff_t)(ptr_end - cursor) > 2 && strncmp (cursor, "../", 3) == 0)
+				{
+					nesting_counter++;
+					if (nesting_counter > slash_counter)
+						return "/";
+					cursor += 3;
+				}
+
+				while( ptr != cursor)
+				{
+					*tmp = *ptr;
+					tmp++;
+					ptr++;
+				}
+				continue;
+			}
+
+			*tmp = '/';
+			tmp++;
+			continue;
+		}
+		else if (*ptr == '!' || *ptr == ';' || *ptr == '\"' || *ptr == '#' || *ptr == '&' || *ptr == '\'' || *ptr == '*' ||
 						*ptr == '<' || *ptr == '>' || *ptr == '?' || *ptr == '`' || *ptr == '|')
 			return "/";
 

@@ -17,9 +17,9 @@ Client::Client(const std::string& address, const std::string& port, std::size_t 
 		_address(address),
 		_thread_count(thread_count),
 		_document_root(document_root),
-		_strand(_io_service), //connection
+		_strand(), //(_io_service), //connection
 		_socket(), //_socket(_io_service)  //connection
-		_threads(),
+		//_threads(),
 		_parser()
 {
 	//_socket.reset(new connection(io_service_, request_handler_));
@@ -67,8 +67,9 @@ void Client::start_accept()
 	}*/
 
 	_socket.reset(new boost::asio::ip::tcp::socket(_io_service));
+	_strand.reset(new boost::asio::io_service::strand(_io_service));
 
-	_acceptor.async_accept(*_socket, boost::bind(&Client::handle_accept, this, boost::asio::placeholders::error));
+	_acceptor.async_accept(*_socket, boost::bind(&Client::handle_accept, shared_from_this(), boost::asio::placeholders::error));
 	std::cout<<"endof start_accept"<<std::endl;
 }
 
@@ -95,18 +96,18 @@ void Client::handle_stop()
 
 void Client::run()
 {
-	  //std::vector<boost::shared_ptr<boost::thread> > threads;
+	std::vector<boost::shared_ptr<boost::thread> > threads;
 	std::cout << "Client::run()" << std::endl;
 	for (std::size_t i = 0; i < _thread_count; ++i)
 	{
 		boost::shared_ptr<boost::thread> thread(new boost::thread(boost::bind(&boost::asio::io_service::run, &_io_service)));
-		_threads.push_back(thread);
+		threads.push_back(thread);
 	}
 
-	std::cout << "_threads.size() = "<< _threads.size() << std::endl;
+	std::cout << "threads.size() = "<< threads.size() << std::endl;
 
-	for (std::size_t i = 0; i < _threads.size(); ++i)
-		_threads[i]->join();
+	for (std::size_t i = 0; i < threads.size(); ++i)
+		threads[i]->join();
 }
 
 //**************************************************************************************************
@@ -121,10 +122,12 @@ void Client::start_connection()
 	std::cout<< "start_connection" << std::endl;
 
 	_socket->async_read_some(boost::asio::buffer(_buffer),
-			_strand.wrap(
-					boost::bind(&Client::handle_read, shared_from_this(),
+			_strand->wrap(
+					boost::bind(&Client::handle_read,
+					shared_from_this(),
 					boost::asio::placeholders::error,
 					boost::asio::placeholders::bytes_transferred)));
+
 
 	//_socket->async_read_some(boost::asio::buffer(_buffer),_strand.wrap( boost::bind(&Client::handle_read, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred)));
 	std::cout<<"endof start_connection"<<std::endl;
@@ -133,7 +136,14 @@ void Client::start_connection()
 void Client::handle_read(const boost::system::error_code& error, std::size_t bytes_transferred)
 {
 	std::cout<< "handle read 1" << std::endl;
-	if (error) return;
+
+	//std::cout<<_buffer<<std::endl;
+
+	std::cout<<"ERROR "<< error.message()<<std::endl;
+
+	if (error)
+		return;
+
 	std::cout<< "handle read 2" << std::endl;
 
 	bool result;

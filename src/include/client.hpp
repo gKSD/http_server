@@ -21,11 +21,11 @@
 
 enum { max_length = 1024 , buffer_length = 8192};
 
-class Client : private boost::noncopyable,  public boost::enable_shared_from_this<Client>
+class Client :  public boost::enable_shared_from_this<Client>,  private boost::noncopyable
 {
 public:
 
-	Client(const std::string& address, const std::string& port, std::size_t thread_count,  const std::string& document_root);
+	explicit Client(const std::string& address, const std::string& port, std::size_t thread_count,  const std::string& document_root);
 	virtual ~Client();
 
 	void run();
@@ -58,13 +58,13 @@ private:
 	std::string _document_root;
 
 	//from connection class
-	boost::asio::io_service::strand _strand;
+	//boost::asio::io_service::strand _strand;
+	boost::shared_ptr<boost::asio::io_service::strand> _strand;
+
 	//boost::asio::ip::tcp::socket _socket;
 	boost::shared_ptr<boost::asio::ip::tcp::socket> _socket;
-	//boost::shared_ptr<boost::asio::io_service::strand> _strand;
 
-
-	std::vector<boost::shared_ptr<boost::thread> > _threads;
+	//std::vector<boost::shared_ptr<boost::thread> > _threads;
 
 	Parser _parser;
 };
