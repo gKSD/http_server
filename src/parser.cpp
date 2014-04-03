@@ -366,14 +366,17 @@ response::status_type Parser::make_response()
 void Parser::form_response(response::status_type status)
 {
 	if (status == response::not_found || status == response::internal_server_error || status == response::method_not_allowed)
+	{
+		_response.file_extension = "html";
 		_response.body.append(get_content_string_by_status(status));
+	}
 
 	std::cout << "Response body: " << _response.body <<std::endl;
 
 	_response.status_string = get_status_string(status);
 
 	char body_size [50];
-	sprintf(body_size, "%ld\r\n", _response.body.size());
+	sprintf(body_size, "%ld", _response.body.size());
 
 	std::cout<<"body_size "<<body_size<<std::endl;
 
@@ -382,16 +385,16 @@ void Parser::form_response(response::status_type status)
 	//_response.headers.push_back("123123");
 
 	_response.headers.push_back("Server");
-	_response.headers.push_back("http_server\r\n");
+	_response.headers.push_back("http_server");
 
 	_response.headers.push_back("Content-Length");
 	_response.headers.push_back(body_size);
 
 	_response.headers.push_back("Content-Type");
-	_response.headers.push_back((get_content_type(_response.file_extension)+"\r\n"));
+	_response.headers.push_back((get_content_type(_response.file_extension)+""));
 
 	_response.headers.push_back("Connection");
-	_response.headers.push_back("close\r\n");
+	_response.headers.push_back("close");
 
 	/*
 	 *  HTTP/1.1 200 OK
@@ -441,20 +444,38 @@ std::string Parser::get_status_string (response::status_type type)
 std::vector<boost::asio::const_buffer> Parser::format_response_to_send_it_to_socket()
 {
 	std::vector<boost::asio::const_buffer> buffer;
+	std::size_t size = _response.headers.size();
 
 	buffer.push_back(boost::asio::buffer(_response.status_string));
 
-	std::size_t n = _response.headers.size();
+	char r = '\r';
+	const  char *ptr_r = &r;
+
+	char n1 = '\n';
+	const  char *ptr_n = &n1;
+
+	char colon = ':';
+	const char *ptr_colon = &colon;
+
+	char space = ' ';
+	const  char *ptr_space = &space;
+
 	for (std::size_t i = 0; i < n; i += 2)
 	{
 		buffer.push_back(boost::asio::buffer(_response.headers[i]));
-		buffer.push_back(boost::asio::buffer(":"));
+
+		buffer.push_back(boost::asio::buffer(ptr_colon, 1));
+		buffer.push_back(boost::asio::buffer(ptr_space, 1));
 
 		buffer.push_back(boost::asio::buffer(_response.headers[i + 1]));
-		//buffer.push_back(boost::asio::buffer("\r\n"));
+
+		buffer.push_back(boost::asio::buffer(ptr_r, 1));
+		buffer.push_back(boost::asio::buffer(ptr_n, 1));
 	}
 
-	buffer.push_back(boost::asio::buffer("\r\n"));
+
+	buffer.push_back(boost::asio::buffer(ptr_r, 1));
+	buffer.push_back(boost::asio::buffer(ptr_n, 1));
 	buffer.push_back(boost::asio::buffer(_response.body));
 
 	return buffer;
