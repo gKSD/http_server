@@ -444,43 +444,29 @@ std::string Parser::get_status_string (response::status_type type)
 std::vector<boost::asio::const_buffer> Parser::format_response_to_send_it_to_socket()
 {
 	std::vector<boost::asio::const_buffer> buffer;
-	std::size_t n = _response.headers.size();
 
 	buffer.push_back(boost::asio::buffer(_response.status_string));
 
-	//char r = '\r';
-	//const  char *ptr_r = &r;
+	std::size_t n = _response.headers.size();
 
-	//char n1 = '\n';
-	//const  char *ptr_n = &n1;
 
-	//char colon = ':';
-	//const char *ptr_colon = &colon;
-
-	//char space = ' ';
-	//const  char *ptr_space = &space;
-
-	const char name_value_separator[] = { ':', ' ' };
 	const char crlf[] = { '\r', '\n' };
-
-
+	const char name_value_separator[] = { ':', ' ' };
+	//const char crlf[] = "\r\n";
+	//const char name_value_separator[] = ":  ";
 	for (std::size_t i = 0; i < n; i += 2)
 	{
 		buffer.push_back(boost::asio::buffer(_response.headers[i]));
+		//buffer.push_back(boost::asio::buffer(":"));
 		buffer.push_back(boost::asio::buffer(name_value_separator));
-		//buffer.push_back(boost::asio::buffer(ptr_colon, 1));
-		//buffer.push_back(boost::asio::buffer(ptr_space, 1));
 
 		buffer.push_back(boost::asio::buffer(_response.headers[i + 1]));
+		//buffer.push_back(boost::asio::buffer("\r\n"));
 		buffer.push_back(boost::asio::buffer(crlf));
-		//buffer.push_back(boost::asio::buffer(ptr_r, 1));
-		//buffer.push_back(boost::asio::buffer(ptr_n, 1));
 	}
 
-
-	//buffer.push_back(boost::asio::buffer(ptr_r, 1));
-	//buffer.push_back(boost::asio::buffer(ptr_n, 1));
 	buffer.push_back(boost::asio::buffer(crlf));
+	//buffer.push_back(boost::asio::buffer("\n"));
 	buffer.push_back(boost::asio::buffer(_response.body));
 
 	return buffer;
