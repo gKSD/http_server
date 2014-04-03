@@ -36,11 +36,11 @@ void socket_connect::handle_read(const boost::system::error_code& error, std::si
 	if (error) return;
 
 	std::cout<< "handle read 2" << std::endl;
-	std::cout<<_buffer<<std::endl;
+	//std::cout<<_buffer<<std::endl;
 
 	_parser.parse(_buffer);
 	_parser.make_response();
-    std::cout<<"!!!!!!!!!!!!!!!!!!!!!!"<<_parser.format_response_to_send_it_to_socket().size()<<std::endl;
+    //std::cout<<"!!!!!!!!!!!!!!!!!!!!!!"<<_parser.format_response_to_send_it_to_socket().size()<<std::endl;
 	boost::asio::async_write(_socket, _parser.format_response_to_send_it_to_socket(),
 			_strand.wrap( boost::bind(&socket_connect::handle_write, shared_from_this(), boost::asio::placeholders::error)));
 }

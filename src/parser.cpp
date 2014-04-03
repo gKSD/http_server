@@ -64,7 +64,7 @@ void Parser::reset()
 
 bool Parser::parse(const std::string& request)
 {
-	std::cout<< "Parser \n "<< request << std::endl;
+	//std::cout<< "Parser \n "<< request << std::endl;
 
 	std::stringstream stream_request(request);
 
@@ -74,9 +74,9 @@ bool Parser::parse(const std::string& request)
 	if (getline(stream_request, line)) parse_first_line(line);
 	else return false; //&&&&&&
 
-	std::cout <<"Method: "<< _request.method<<std::endl;
-	std::cout <<"URL: " << _request.url<<std::endl;
-	std::cout <<"Protocol: " << _request.protocol<<std::endl;
+	//std::cout <<"Method: "<< _request.method<<std::endl;
+	//std::cout <<"URL: " << _request.url<<std::endl;
+	//std::cout <<"Protocol: " << _request.protocol<<std::endl;
 
 	//парсим остальные заголовки
 	while (getline(stream_request, line))
@@ -99,7 +99,7 @@ bool Parser::parse(const std::string& request)
 			}
 
 			_request.headers.insert(std::pair<std::string,std::string>(header, value));
-			std::cout<<"** "<<header<< " => "<<_request.headers.at(header)<<std::endl;
+			//std::cout<<"** "<<header<< " => "<<_request.headers.at(header)<<std::endl;
 		}
 	}
 
@@ -116,7 +116,7 @@ bool Parser::parse_first_line(std::string &str)
 	std::vector<std::string> tokens;
 	boost::split(tokens, str, boost::is_any_of(" \t\n\r"));
 	std::vector<std::string>::iterator it = tokens.begin();
-	std::cout<< "1: "<< *it<<std::endl;
+	//std::cout<< "1: "<< *it<<std::endl;
 
 	if (tokens.size() == 0)
 	{
@@ -148,7 +148,7 @@ bool Parser::parse_first_line(std::string &str)
 	it++;
 	if (it != tokens.end())
 	{
-		std::cout<< "2: "<< *it<<std::endl;
+		//std::cout<< "2: "<< *it<<std::endl;
 		//boost::regex regex("(\/[\w\s\.]+)+\/?");
 		//boost::regex regex("/[0-9a-zA-Z_%\./-]*");
 		boost::regex regex("/[0-9a-zA-Z_%\./\!\"#\&\'\*\,\:\;\<\=\>\?\[\|\^\`\{\|\}-]*");
@@ -156,32 +156,32 @@ bool Parser::parse_first_line(std::string &str)
 		boost::smatch match_result;
 		if (boost::regex_match(*it,  match_result, regex))
 		{
-			std::cout << "correct"<<std::endl;
+			//std::cout << "correct"<<std::endl;
 			_f_has_url = true;
 			_request.url = get_valid_url(*it);
 			if (_request.url[_request.url.size() - 1] == '/')
 				_request.url.append("index.html");
-			std::cout <<"url --> "<< _request.url <<std::endl;
+			//std::cout <<"url --> "<< _request.url <<std::endl;
 
 
 			//получаем расширение запрашиваемого файла
 
 			size_t dot_pos = _request.url.rfind('.');
-			std::cout << "found at: " << dot_pos << '\n';
+			//std::cout << "found at: " << dot_pos << '\n';
 
 			size_t slash_pos = _request.url.rfind('/');
-			std::cout << "found at: " << slash_pos << '\n';
+			//std::cout << "found at: " << slash_pos << '\n';
 
 			if (dot_pos > slash_pos)
 			{
 				for (int j = dot_pos + 1; j < _request.url.length(); j++ )
 					_response.file_extension.push_back(_request.url[j]);
 			}
-			std::cout <<"File extension: "<< _response.file_extension<<std::endl;
+			//std::cout <<"File extension: "<< _response.file_extension<<std::endl;
 		}
 		else
 		{
-			std::cout<< "incorrect" << std::endl;
+			//std::cout<< "incorrect" << std::endl;
 			_f_has_url = false;
 			_request.url = "";
 		}
@@ -230,7 +230,7 @@ std::string Parser::get_valid_url(std::string &str)
 		{
 			if ((ptrdiff_t)(ptr_end - ptr) > 2)
 			{
-				std::cout << "parse encode"<<std::endl;
+				//std::cout << "parse encode"<<std::endl;
 				code[0] = *(++ptr);
 				code[1] = *(++ptr);
 				code[2] = '\0';
@@ -248,23 +248,18 @@ std::string Parser::get_valid_url(std::string &str)
 		else  if (*ptr == '?') break;
 		else if (*ptr == '/')
 		{
-			//  /%20%20asda.jpeg
-			std::cout<< "qweqwe"<<std::endl;
 			slash_counter++;
 			while (ptr != ptr_end && *ptr == '/') ptr++;
 
 			if ((ptrdiff_t)(ptr_end - ptr) > 2 && *ptr == '.')
 			{
-				std::cout<< "../ was found"<<std::endl;
 				const char *cursor = ptr;
 				int nesting_counter = 0;
 				bool flag = true;
 
 				while ( (ptrdiff_t)(ptr_end - cursor) > 2 && strncmp (cursor, "../", 3) == 0 && flag)
 				{
-					std::cout<< "cycle for ../ was found"<<std::endl;
 					nesting_counter++;
-					std::cout<< "nesting_counter = "<< nesting_counter << " and slash_counter = "<< slash_counter<<std::endl;
 					if (nesting_counter > slash_counter)
 						return "/";
 					cursor += 3;
@@ -300,17 +295,14 @@ std::string Parser::get_valid_url(std::string &str)
 
 response::status_type Parser::make_response()
 {
-	std::cout << "Parser make response" <<std::endl;
+	//std::cout << "Parser make response" <<std::endl;
 	if (_f_has_method && _f_is_supported_method)
 	{
-		std::cout << "has method and support" <<std::endl;
 		if (_f_is_GET_method)
 		{
-			std::cout << "is GET method" <<std::endl;
 			//if (_f_has_protocol)
 			if(!_f_has_url)
 			{
-				std::cout << "! has url" <<std::endl;
 				//405
 				form_response(response::method_not_allowed);
 				return response::method_not_allowed;
@@ -371,15 +363,10 @@ void Parser::form_response(response::status_type status)
 		_response.body.append(get_content_string_by_status(status));
 	}
 
-	std::cout << "Response body: " << _response.body <<std::endl;
-
 	_response.status_string = get_status_string(status);
 
 	char body_size [50];
 	sprintf(body_size, "%ld", _response.body.size());
-
-	std::cout<<"body_size "<<body_size<<std::endl;
-
 
 	//_response.headers.push_back("Date");
 	//_response.headers.push_back("123123");
