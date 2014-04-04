@@ -26,13 +26,12 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
-//#include <string>
 
-#include "include/parser.hpp"
+#include "include/httpprocessor.hpp"
 #include "include/httpprotocol.hpp"
 
 
-Parser::Parser(std::string document_root) :
+Http_processor::Http_processor(std::string document_root) :
 		_request(),
 		_f_is_supported_protocol(true),
 		_f_has_method(true),
@@ -44,7 +43,7 @@ Parser::Parser(std::string document_root) :
 		_document_root(document_root)
 {}
 
-void Parser::reset()
+void Http_processor::reset()
 {
 	_f_is_supported_protocol = true;
 	_f_has_method = true;
@@ -65,10 +64,8 @@ void Parser::reset()
 	_response.body.clear();
 }
 
-bool Parser::parse(const std::string& request)
+bool Http_processor::parse(const std::string& request)
 {
-	//std::cout<< "Parser \n "<< request << std::endl;
-
 	std::stringstream stream_request(request);
 
 	std::string line;
@@ -104,12 +101,12 @@ bool Parser::parse(const std::string& request)
 	return true;
 }
 
-bool Parser::is_valid_url(std::string url)
+bool Http_processor::is_valid_url(std::string url)
 {
 	return true;
 }
 
-bool Parser::parse_first_line(std::string &str)
+bool Http_processor::parse_first_line(std::string &str)
 {
 	std::vector<std::string> tokens;
 
@@ -117,7 +114,6 @@ bool Parser::parse_first_line(std::string &str)
 	while(len>0) {
 		if (!isprint(str[len]))
 		{
-			//std::cout<<"deleting"<<line[len]<<std::endl;
 			str[len] = '\0';
 		}
 		len--;
@@ -129,7 +125,6 @@ bool Parser::parse_first_line(std::string &str)
 
 	if (tokens.empty() || tokens.size() == 1)
 	{
-		std::cout << "tockens are empty" <<std::endl;
 		_request.url = "";
 		_request.protocol = "";
 		_request.method = "";
@@ -153,8 +148,6 @@ bool Parser::parse_first_line(std::string &str)
 	//if (boost::regex_match(tokens.at(rit),  match_result, regex)) std::cout << "ok" <<std::endl;
 	if (tokens.at(rit).find("HTTP") != std::string::npos)
 	{
-		std::cout << "HTTP was found" <<std::endl;
-
 		_request.protocol = tokens.at(rit);//*rit;
 		_f_has_protocol = true;
 
@@ -170,33 +163,27 @@ bool Parser::parse_first_line(std::string &str)
 	}
 	else
 	{
-		std::cout << "HTTP wasn't found" <<std::endl;
-
 		_request.protocol = "";
 		_f_has_protocol = false;
 		rit++;
 	}
 
-	std::cout << "Protocol: "<<_request.protocol<<std::endl;
+	//std::cout << "Protocol: "<<_request.protocol<<std::endl;
 
 	if (tokens.at(it).compare(method_GET) == 0)
 	{
-		std::cout << "Method GET was found" <<std::endl;
 		_f_is_GET_method = true;
 	}
 	else if (tokens.at(it).compare(method_POST) == 0)
 	{
-		std::cout << "Method POST was found" <<std::endl;
 		_f_is_POST_method = true;
 	}
 	else if (tokens.at(it).compare(method_HEAD) == 0)
 	{
-		std::cout << "Method HEAD was found" <<std::endl;
 		_f_is_HEAD_method = true;
 	}
 	else
 	{
-		std::cout << "Method wasn't found" <<std::endl;
 		_f_has_method = false;
 		_request.method = "";
 		_request.url = "";
@@ -204,7 +191,7 @@ bool Parser::parse_first_line(std::string &str)
 		return false;
 	}
 	_request.method = tokens.at(it);
-	std::cout << "Method: "<<_request.method<<std::endl;
+	//std::cout << "Method: "<<_request.method<<std::endl;
 
 	it++;
 	if (it < rit)
@@ -213,7 +200,6 @@ bool Parser::parse_first_line(std::string &str)
 		it++;
 		while (it < rit)
 		{
-			std::cout << "cycle" <<std::endl;
 			url += "%20";
 			url += tokens.at(it);
 			it++;
@@ -226,14 +212,12 @@ bool Parser::parse_first_line(std::string &str)
 		boost::smatch match_result;
 		if (boost::regex_match(url,  match_result, regex))
 		{
-			std::cout << "Url founded" <<std::endl;
 			_request.url = get_valid_url(url);
 
 			if (_request.url == "")
 				_f_has_url = false;
 			else
 			{
-				std::cout << "url is good" <<std::endl;
 				_f_has_url = true;
 				if (_request.url[_request.url.size() - 1] == '/')
 					_request.url.append("index.html");
@@ -250,26 +234,22 @@ bool Parser::parse_first_line(std::string &str)
 		}
 		else
 		{
-			std::cout << "Url wasn't found" <<std::endl;
 			_f_has_url = false;
 			_request.url = "";
 		}
 	}
 	else
 	{
-		std::cout << "last" <<std::endl;
 		_request.url = "";
 		_f_has_url = false;
 		return false;
 	}
-	std::cout << "URL: "<<_request.url<<std::endl;
+	//std::cout << "URL: "<<_request.url<<std::endl;
 	return true;
 }
 
-std::string Parser::get_valid_url(std::string &str)
+std::string Http_processor::get_valid_url(std::string &str)
 {
-	//std::string result;
-
 	const char *ptr = str.c_str();
 	const char *ptr_end =  ptr + str.length();
 
@@ -288,7 +268,6 @@ std::string Parser::get_valid_url(std::string &str)
 		{
 			if ((ptrdiff_t)(ptr_end - ptr) > 2)
 			{
-				//std::cout << "parse encode"<<std::endl;
 				code[0] = *(++ptr);
 				code[1] = *(++ptr);
 				code[2] = '\0';
@@ -297,7 +276,7 @@ std::string Parser::get_valid_url(std::string &str)
 						lcode == 0x3f || lcode == 0x60 || lcode == 0x7c)
 				return "/";
 
-				*tmp = (char) lcode; //ПРОВЕРИТЬ
+				*tmp = (char) lcode;
 				tmp++;
 				ptr++;
 				continue;
@@ -347,11 +326,10 @@ std::string Parser::get_valid_url(std::string &str)
 		ptr++;
 	}
 
-	//result = url;
 	return url;
 }
 
-std::string Parser::get_UTC_datetime_string()
+std::string Http_processor::get_UTC_datetime_string()
 {
 	boost::posix_time::time_facet *facet = new boost::posix_time::time_facet("%a, %d %b %Y %H:%M:%S%F %z");
 
@@ -364,9 +342,8 @@ std::string Parser::get_UTC_datetime_string()
 	return ss.str() + " GMT";
 }
 
-response::status_type Parser::make_response()
+response::status_type Http_processor::make_response()
 {
-	//std::cout << "Parser make response" <<std::endl;
 	if (_f_has_method)
 	{
 		if (_f_is_GET_method || _f_is_HEAD_method)
@@ -436,7 +413,7 @@ response::status_type Parser::make_response()
 	}
 }
 
-void Parser::form_response(response::status_type status)
+void Http_processor::form_response(response::status_type status)
 {
 	if (status == response::not_found || status == response::internal_server_error || status == response::method_not_allowed ||
 			status == response::forbidden || status == response::not_found)
@@ -467,22 +444,9 @@ void Parser::form_response(response::status_type status)
 
 	_response.headers.push_back("Connection");
 	_response.headers.push_back("close");
-
-	/*
-	 *  HTTP/1.1 200 OK
-Server: nginx
-Date: Wed, 02 Apr 2014 17:23:54 GMT
-Content-Type: text/html; charset=utf-8
-Transfer-Encoding: chunked
-Connection: keep-alive
-X-Powered-By: LiveStreet CMS
-Expires: Thu, 19 Nov 1981 08:52:00 GMT
-Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0
-Pragma: no-cache
-	 * */
 }
 
-std::string Parser::get_content_string_by_status(response::status_type type)
+std::string Http_processor::get_content_string_by_status(response::status_type type)
 {
 	switch (type)
 	{
@@ -501,7 +465,7 @@ std::string Parser::get_content_string_by_status(response::status_type type)
 	}
 }
 
-std::string Parser::get_status_string (response::status_type type)
+std::string Http_processor::get_status_string (response::status_type type)
 {
 	switch (type)
 	{
@@ -520,7 +484,7 @@ std::string Parser::get_status_string (response::status_type type)
 	}
 }
 
-std::vector<boost::asio::const_buffer> Parser::format_response_to_send_it_to_socket()
+std::vector<boost::asio::const_buffer> Http_processor::format_response_to_send_it_to_socket()
 {
 	std::vector<boost::asio::const_buffer> buffer;
 

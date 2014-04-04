@@ -7,36 +7,37 @@
 //============================================================================
 
 #include "include/httpserver.hpp"
+#include <boost/lexical_cast.hpp>
 
 #include <iostream>
+
 using namespace std;
 
 int main(int argc, char* argv[])
 {
 	try
 	  {
-	    /*if (argc != 4)
+		string address;
+		string port;
+		string document_root;
+		size_t thread_count;
+
+	    if (argc != 5)
 	    {
-	      std::cerr << "Usage: client <host> <port>\n";
+	      std::cerr << "Usage: client <host> <port> <document root> <amount of threads>\n";
 	      return 1;
 	    }
 
-	    string address = argv[1];
-	    string port = argv[2];
-	    string document_root = argv[3];
-	    size_t thread_count = 1;
-	    */
+	    address = argv[1];
+	    port = argv[2];
+	    document_root = argv[3];
+	    thread_count = boost::lexical_cast<std::size_t>(argv[4]);
 
-		string address = "localhost";
-		string port = "8086";
-		string document_root = "/home/sofia/static/"; //"/home/sofia/programs/eclipse/my_http_server/doc_root";
-		size_t thread_count = 1;
+		//string address = "localhost";
+		//string port = "8086";
+		//string document_root = "/home/sofia/static/";
+		//size_t thread_count = 1;
 
-	    //Client client(address, port, thread_count, document_root);
-	    //client.run();
-
-		//boost::shared_ptr<Client> client(new Client(address, port, thread_count, document_root));
-		//client->run();
 
 		Http_server http_server(address, port, thread_count, document_root);
 		http_server.run();

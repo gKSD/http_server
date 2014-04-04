@@ -12,11 +12,11 @@
 
 #include <boost/asio.hpp>
 
-class Parser //httpprocessor
+class Http_processor//httpprocessor
 {
 public:
 
-	Parser( std::string document_root);
+	Http_processor( std::string document_root);
 	void reset();
 
 	bool parse(const std::string& request);

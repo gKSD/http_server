@@ -14,13 +14,13 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
-#include "parser.hpp"
+#include "httpprocessor.hpp"
 
 
 class socket_connect: public boost::enable_shared_from_this<socket_connect>, private boost::noncopyable
 {
 public:
-	socket_connect(boost::asio::io_service& io_service, Parser &parser);
+	socket_connect(boost::asio::io_service& io_service, Http_processor &processor);
 	virtual ~socket_connect();
 
 	boost::asio::ip::tcp::socket& socket()
@@ -39,7 +39,7 @@ private:
 	boost::asio::ip::tcp::socket _socket;
 
 	char _buffer [buffer_length];
-	Parser _parser;
+	Http_processor _processor;
 
 };
 

@@ -17,7 +17,7 @@
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/thread/thread.hpp>
 
-#include "parser.hpp"
+#include "httpprocessor.hpp"
 
 #include "socketconnect.hpp"
 
@@ -39,13 +39,6 @@ private:
 	void handle_accept(const boost::system::error_code& error);
 	void handle_stop();
 
-	//connection
-	//boost::asio::ip::tcp::socket& socket();
-
-	//void start_connection();
-	//void handle_read(const boost::system::error_code& error, std::size_t bytes_transferred);
-	//void handle_write(const boost::system::error_code& error);
-
 private:
 
 	boost::asio::io_service _io_service;
@@ -58,7 +51,7 @@ private:
 	std::string _document_root;
 
 	 boost::shared_ptr<socket_connect> _socket_connect;
-	 Parser _parser;
+	 Http_processor _processor;
 };
 
 #endif /* CLIENT_HPP_ */
