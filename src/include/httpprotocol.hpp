@@ -28,6 +28,8 @@ const std::string ok_string = "HTTP/1.0 200 OK\r\n";
 const std::string not_found_string = "HTTP/1.0 404 Not Found\r\n";
 const std::string method_not_allowed_string = "HTTP/1.0 405 Method Not Allowed\r\n";
 const std::string internal_server_error_string = "HTTP/1.0 500 Internal Server Error\r\n";
+const std::string bad_request_string = "HTTP/1.0 400 Bad Request\r\n";
+const std::string forbidden_string = "HTTP/1.0 403 Forbidden\r\n";
 
 
 
@@ -36,6 +38,8 @@ const std::string ok_content = "";
 const std::string not_found_content = "<html> <head> <h1>404</h1> </head> <body></body> </html>";
 const std::string method_not_allowed_content = "<html> <head><h1>405</h1></head> <body></body> </html>";
 const std::string internal_server_error_content = "<html> <head><h1>500</h1></head> <body></body> </html>";
+const std::string bad_request_content = "<html><head><title>Bad Request</title></head><body><h1>400 Bad Request</h1></body></html>";
+const std::string forbidden_content = "<html><head><title>Forbidden</title></head><body><h1>403 Forbidden</h1></body></html>";
 
 
 
@@ -50,6 +54,8 @@ enum status_type
 {
 	undefined = 0,
 	ok = 200,
+	bad_request = 400,
+	forbidden = 403,
 	not_found = 404,
 	method_not_allowed = 405,
 	internal_server_error = 500,

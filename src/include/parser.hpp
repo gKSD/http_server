@@ -24,7 +24,6 @@ public:
 
 	std::vector<boost::asio::const_buffer> format_response_to_send_it_to_socket();
 
-	//std::stringbuf format_response_to_send_it_to_socket1();
 
 private:
 
@@ -43,7 +42,6 @@ private:
 	request::request _request;
 
 	bool _f_is_supported_protocol;
-	bool _f_is_supported_method;
 
 	bool _f_has_method;
 	bool _f_has_url;

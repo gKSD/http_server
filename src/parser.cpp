@@ -33,7 +33,6 @@
 Parser::Parser(std::string document_root) :
 		_request(),
 		_f_is_supported_protocol(true),
-		_f_is_supported_method(true),
 		_f_has_method(true),
 		_f_has_url(true),
 		_f_has_protocol(true),
@@ -46,7 +45,6 @@ Parser::Parser(std::string document_root) :
 void Parser::reset()
 {
 	_f_is_supported_protocol = true;
-	_f_is_supported_method  = true;
 	_f_has_method = true;
 	_f_has_url = true;
 	_f_has_protocol = true;
@@ -59,6 +57,7 @@ void Parser::reset()
 	_request.url.clear();
 	_request.method.clear();
 	_request.protocol.clear();
+	_response.file_extension.clear();
 
 	_response.headers.clear();
 	_response.body.clear();
@@ -119,23 +118,26 @@ bool Parser::parse_first_line(std::string &str)
 		_request.url = "";
 		_request.protocol = "";
 		_request.method = "";
+
+		_f_is_supported_protocol = false;
+
+		_f_has_method = false;
+		_f_has_url = false;
+		_f_has_protocol = false;
 		return false;
 	}
 
 	if (!((*it).compare(method_GET) == 0 || (*it).compare(method_POST) == 0 || (*it).compare(method_HEAD) == 0 )) _f_has_method = false;
 	if ((*it).compare(method_GET) == 0)
 	{
-		_f_is_supported_method = true;
 		_f_is_GET_method = true;
 	}
 	else if ((*it).compare(method_POST) == 0)
 	{
-		_f_is_supported_method = false;
 		_f_is_POST_method = true;
 	}
 	else if ((*it).compare(method_HEAD) == 0)
 	{
-		_f_is_supported_method = false;
 		_f_is_HEAD_method = true;
 	}
 
@@ -152,32 +154,28 @@ bool Parser::parse_first_line(std::string &str)
 		boost::smatch match_result;
 		if (boost::regex_match(*it,  match_result, regex))
 		{
-			//std::cout << "correct"<<std::endl;
-			_f_has_url = true;
 			_request.url = get_valid_url(*it);
-			if (_request.url[_request.url.size() - 1] == '/')
-				_request.url.append("index.html");
-			//std::cout <<"url --> "<< _request.url <<std::endl;
 
-
-			//получаем расширение запрашиваемого файла
-
-			size_t dot_pos = _request.url.rfind('.');
-			//std::cout << "found at: " << dot_pos << '\n';
-
-			size_t slash_pos = _request.url.rfind('/');
-			//std::cout << "found at: " << slash_pos << '\n';
-
-			if (dot_pos > slash_pos)
+			if (_request.url == "")
+				_f_has_url = false;
+			else
 			{
-				for (int j = dot_pos + 1; j < _request.url.length(); j++ )
-					_response.file_extension.push_back(_request.url[j]);
+				_f_has_url = true;
+				if (_request.url[_request.url.size() - 1] == '/')
+					_request.url.append("index.html");
+
+				//получаем расширение запрашиваемого файла
+				size_t dot_pos = _request.url.rfind('.');
+				size_t slash_pos = _request.url.rfind('/');
+				if (dot_pos > slash_pos)
+				{
+					for (int j = dot_pos + 1; j < _request.url.length(); j++ )
+						_response.file_extension.push_back(_request.url[j]);
+				}
 			}
-			//std::cout <<"File extension: "<< _response.file_extension<<std::endl;
 		}
 		else
 		{
-			//std::cout<< "incorrect" << std::endl;
 			_f_has_url = false;
 			_request.url = "";
 		}
@@ -186,18 +184,31 @@ bool Parser::parse_first_line(std::string &str)
 	{
 		_request.url = "";
 		_request.protocol = "";
+		_f_has_url = false;
+		_f_has_protocol = false;
 		return false;
 	}
 
 	it++;
 	if (it != tokens.end())
 	{
-		//boost::regex regex("HTTP/?1\.[0|1]"));
-		_request.protocol.append(*it);
+		boost::regex regex("HTTP/?1\.[0|1]");
+		boost::smatch match_result;
+		if (boost::regex_match(*it,  match_result, regex))
+		{
+			_request.protocol = *it;
+			_f_has_protocol = true;
+		}
+		else
+		{
+			_request.protocol = "";
+			_f_has_protocol = false;
+		}
 	}
 	else
 	{
 		_request.protocol = "";
+		_f_has_protocol = false;
 		return false;
 	}
 
@@ -257,7 +268,7 @@ std::string Parser::get_valid_url(std::string &str)
 				{
 					nesting_counter++;
 					if (nesting_counter > slash_counter)
-						return "/";
+						return "";
 					cursor += 3;
 				}
 
@@ -292,16 +303,21 @@ std::string Parser::get_valid_url(std::string &str)
 response::status_type Parser::make_response()
 {
 	//std::cout << "Parser make response" <<std::endl;
-	if (_f_has_method && _f_is_supported_method)
+	if (_f_has_method)
 	{
-		if (_f_is_GET_method)
+		if (_f_is_GET_method || _f_is_HEAD_method)
 		{
-			//if (_f_has_protocol)
+			if (!_f_has_protocol)
+			{
+				//400
+				form_response(response::bad_request);
+				return response::bad_request;
+			}
 			if(!_f_has_url)
 			{
-				//405
-				form_response(response::method_not_allowed);
-				return response::method_not_allowed;
+				//400
+				form_response(response::bad_request);
+				return response::bad_request;
 			}
 
 			std::string path_to_file = _document_root;
@@ -310,9 +326,18 @@ response::status_type Parser::make_response()
 			std::ifstream is(path_to_file.c_str(), std::ios::in | std::ios::binary);
 			if (!is)
 			{
-				//404
-				form_response(response::not_found);
-				return response::not_found;
+				if (_request.url.find("index.html") != std::string::npos)
+				{
+					//403
+					form_response(response::forbidden);
+					return response::forbidden;
+				}
+				else
+				{
+					//404
+					form_response(response::not_found);
+					return response::not_found;
+				}
 			}
 
 			char buffer[buffer_length];
@@ -332,12 +357,6 @@ response::status_type Parser::make_response()
 			form_response(response::method_not_allowed);
 			return response::method_not_allowed;
 		}
-		else if (_f_is_HEAD_method)
-		{
-			//405
-			form_response(response::method_not_allowed);
-			return response::method_not_allowed;
-		}
 		else
 		{
 			//405
@@ -347,15 +366,16 @@ response::status_type Parser::make_response()
 	}
 	else
 	{
-		//405
-		form_response(response::method_not_allowed);
-		return response::method_not_allowed;
+		//400
+		form_response(response::bad_request);
+		return response::bad_request;
 	}
 }
 
 void Parser::form_response(response::status_type status)
 {
-	if (status == response::not_found || status == response::internal_server_error || status == response::method_not_allowed)
+	if (status == response::not_found || status == response::internal_server_error || status == response::method_not_allowed ||
+			status == response::forbidden || status == response::not_found)
 	{
 		_response.file_extension = "html";
 		_response.body = get_content_string_by_status(status);
@@ -407,6 +427,10 @@ std::string Parser::get_content_string_by_status(response::status_type type)
 			return not_found_content;
 	case (response::method_not_allowed):
 			return method_not_allowed_content;
+	case (response::bad_request):
+			return bad_request_content;
+	case (response::forbidden):
+			return forbidden_content;
 	default:
 			return internal_server_error_content;
 	}
@@ -422,43 +446,14 @@ std::string Parser::get_status_string (response::status_type type)
 			return not_found_string;
 	case (response::method_not_allowed):
 			return method_not_allowed_string;
+	case (response::bad_request):
+				return bad_request_string;
+	case (response::forbidden):
+				return forbidden_string;
 	default:
 		return internal_server_error_string;
 	}
 }
-
-
-/*std::vector<boost::asio::const_buffer> Parser::format_response_to_send_it_to_socket()
-{
-	std::vector<boost::asio::const_buffer> buffer;
-
-	buffer.push_back(boost::asio::buffer(_response.status_string));
-
-	std::size_t n = _response.headers.size();
-
-
-	const char crlf[] = {'\r', '\n'};
-
-	//const char name_value_separator[] = { ':', ' ' };
-	//const char crlf[] = "\r\n";
-	//const char name_value_separator[] = ":  ";
-	for (std::size_t i = 0; i < n; i += 2)
-	{
-		buffer.push_back(boost::asio::buffer(_response.headers[i]));
-		//buffer.push_back(boost::asio::buffer(":"));
-		//buffer.push_back(boost::asio::buffer(name_value_separator));
-
-		buffer.push_back(boost::asio::buffer(_response.headers[i + 1]));
-		//buffer.push_back(boost::asio::buffer("\r\n"));
-		buffer.push_back(boost::asio::buffer(crlf));
-	}
-
-	buffer.push_back(boost::asio::buffer(crlf));
-	//buffer.push_back(boost::asio::buffer("\n"));
-	buffer.push_back(boost::asio::buffer(_response.body));
-
-	return buffer;
-}*/
 
 std::vector<boost::asio::const_buffer> Parser::format_response_to_send_it_to_socket()
 {
@@ -486,14 +481,13 @@ std::vector<boost::asio::const_buffer> Parser::format_response_to_send_it_to_soc
 	//buffer.push_back(boost::asio::buffer(header_string));
 
 	buffer.push_back(boost::asio::buffer(crlf));
-	buffer.push_back(boost::asio::buffer(_response.body));
+	if (!_f_is_HEAD_method)
+	{
+		buffer.push_back(boost::asio::buffer(_response.body));
+	}
 
 	return buffer;
 }
-
-//std::stringbuf Parser::format_response_to_send_it_to_socket1(){}
-
-
 
 
 
