@@ -19,6 +19,8 @@
 
 #include <boost/lexical_cast.hpp>
 
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/date_time/posix_time/posix_time_io.hpp>
 
 #include <string.h>
 #include <stdlib.h>
@@ -110,11 +112,24 @@ bool Parser::is_valid_url(std::string url)
 bool Parser::parse_first_line(std::string &str)
 {
 	std::vector<std::string> tokens;
-	boost::split(tokens, str, boost::is_any_of(" \t\n\r"));
-	std::vector<std::string>::iterator it = tokens.begin();
 
-	if (tokens.size() == 0)
+	int len = str.length()-1;
+	while(len>0) {
+		if (!isprint(str[len]))
+		{
+			//std::cout<<"deleting"<<line[len]<<std::endl;
+			str[len] = '\0';
+		}
+		len--;
+	}
+
+	boost::split(tokens, str, boost::is_any_of(" \t\n\r"));
+	//std::vector<std::string>::iterator it, rit;
+	int  it, rit;
+
+	if (tokens.empty() || tokens.size() == 1)
 	{
+		std::cout << "tockens are empty" <<std::endl;
 		_request.url = "";
 		_request.protocol = "";
 		_request.method = "";
@@ -127,39 +142,98 @@ bool Parser::parse_first_line(std::string &str)
 		return false;
 	}
 
-	if (!((*it).compare(method_GET) == 0 || (*it).compare(method_POST) == 0 || (*it).compare(method_HEAD) == 0 )) _f_has_method = false;
-	if ((*it).compare(method_GET) == 0)
+	it = 0;
+	rit = tokens.size();
+	rit--;//указывает на последний элемент
+
+	//std::cout << "Gotted HTTP = **" << tokens.at(rit) <<"**"<<std::endl;
+
+	//boost::regex regex("HTTP/1\.[0,1]");
+	//boost::smatch match_result;
+	//if (boost::regex_match(tokens.at(rit),  match_result, regex)) std::cout << "ok" <<std::endl;
+	if (tokens.at(rit).find("HTTP") != std::string::npos)
 	{
+		std::cout << "HTTP was found" <<std::endl;
+
+		_request.protocol = tokens.at(rit);//*rit;
+		_f_has_protocol = true;
+
+		if (tokens.size() == 2)
+		{
+			_request.url = "";
+			_request.method = "";
+			_f_has_method = false;
+			_f_has_url = false;
+			return false;
+		}
+		//rit--;
+	}
+	else
+	{
+		std::cout << "HTTP wasn't found" <<std::endl;
+
+		_request.protocol = "";
+		_f_has_protocol = false;
+		rit++;
+	}
+
+	std::cout << "Protocol: "<<_request.protocol<<std::endl;
+
+	if (tokens.at(it).compare(method_GET) == 0)
+	{
+		std::cout << "Method GET was found" <<std::endl;
 		_f_is_GET_method = true;
 	}
-	else if ((*it).compare(method_POST) == 0)
+	else if (tokens.at(it).compare(method_POST) == 0)
 	{
+		std::cout << "Method POST was found" <<std::endl;
 		_f_is_POST_method = true;
 	}
-	else if ((*it).compare(method_HEAD) == 0)
+	else if (tokens.at(it).compare(method_HEAD) == 0)
 	{
+		std::cout << "Method HEAD was found" <<std::endl;
 		_f_is_HEAD_method = true;
 	}
-
-	_request.method = *it;
+	else
+	{
+		std::cout << "Method wasn't found" <<std::endl;
+		_f_has_method = false;
+		_request.method = "";
+		_request.url = "";
+		_f_has_url = false;
+		return false;
+	}
+	_request.method = tokens.at(it);
+	std::cout << "Method: "<<_request.method<<std::endl;
 
 	it++;
-	if (it != tokens.end())
+	if (it < rit)
 	{
+		std::string url = tokens.at(it);
+		it++;
+		while (it < rit)
+		{
+			std::cout << "cycle" <<std::endl;
+			url += "%20";
+			url += tokens.at(it);
+			it++;
+		}
 		//std::cout<< "2: "<< *it<<std::endl;
 		//boost::regex regex("(\/[\w\s\.]+)+\/?");
 		//boost::regex regex("/[0-9a-zA-Z_%\./-]*");
 		boost::regex regex("/[0-9a-zA-Z_%\./\!\"#\&\'\*\,\:\;\<\=\>\?\[\|\^\`\{\|\}-]*");
 		//boost::regex regex("/[\w%\/]*");
 		boost::smatch match_result;
-		if (boost::regex_match(*it,  match_result, regex))
+		if (boost::regex_match(url,  match_result, regex))
 		{
-			_request.url = get_valid_url(*it);
+			std::cout << "Url founded" <<std::endl;
+			_request.url = get_valid_url(url);
 
 			if (_request.url == "")
 				_f_has_url = false;
 			else
 			{
+				std::cout << "url is good" <<std::endl;
 				_f_has_url = true;
 				if (_request.url[_request.url.size() - 1] == '/')
 					_request.url.append("index.html");
@@ -176,42 +250,19 @@ bool Parser::parse_first_line(std::string &str)
 		}
 		else
 		{
+			std::cout << "Url wasn't found" <<std::endl;
 			_f_has_url = false;
 			_request.url = "";
 		}
 	}
 	else
 	{
+		std::cout << "last" <<std::endl;
 		_request.url = "";
-		_request.protocol = "";
 		_f_has_url = false;
-		_f_has_protocol = false;
 		return false;
 	}
-
-	it++;
-	if (it != tokens.end())
-	{
-		boost::regex regex("HTTP/?1\.[0|1]");
-		boost::smatch match_result;
-		if (boost::regex_match(*it,  match_result, regex))
-		{
-			_request.protocol = *it;
-			_f_has_protocol = true;
-		}
-		else
-		{
-			_request.protocol = "";
-			_f_has_protocol = false;
-		}
-	}
-	else
-	{
-		_request.protocol = "";
-		_f_has_protocol = false;
-		return false;
-	}
-
+	std::cout << "URL: "<<_request.url<<std::endl;
 	return true;
 }
 
@@ -300,6 +351,19 @@ std::string Parser::get_valid_url(std::string &str)
 	return url;
 }
 
+std::string Parser::get_UTC_datetime_string()
+{
+	boost::posix_time::time_facet *facet = new boost::posix_time::time_facet("%a, %d %b %Y %H:%M:%S%F %z");
+
+	std::stringstream ss;
+
+	ss.imbue(std::locale(std::locale(), facet));
+
+	boost::posix_time::ptime now_ptime = boost::posix_time::second_clock::universal_time();
+	ss << now_ptime;
+	return ss.str() + " GMT";
+}
+
 response::status_type Parser::make_response()
 {
 	//std::cout << "Parser make response" <<std::endl;
@@ -307,12 +371,12 @@ response::status_type Parser::make_response()
 	{
 		if (_f_is_GET_method || _f_is_HEAD_method)
 		{
-			if (!_f_has_protocol)
+			/*if (!_f_has_protocol)
 			{
 				//400
 				form_response(response::bad_request);
 				return response::bad_request;
-			}
+			}*/
 			if(!_f_has_url)
 			{
 				//400
@@ -387,21 +451,22 @@ void Parser::form_response(response::status_type status)
 	//char body_size [50];
 	//sprintf(body_size, "%ld", _response.body.size());
 
-	_response.headers.resize(8);
-	//_response.headers.push_back("Date");
-	//_response.headers.push_back("123123");
+	//_response.headers.resize(8);
 
-	_response.headers[0] = "Server";
-	_response.headers[1] = "http_server";
+	_response.headers.push_back("Date");
+	_response.headers.push_back(get_UTC_datetime_string());
 
-	_response.headers[2] = "Content-Length";
-	_response.headers[3] = boost::lexical_cast<std::string>(_response.body.size());//body_size;
+	_response.headers.push_back("Server");
+	_response.headers.push_back("http_server");
 
-	_response.headers[4] = "Content-Type";
-	_response.headers[5] = get_content_type(_response.file_extension);
+	_response.headers.push_back("Content-Length");
+	_response.headers.push_back(boost::lexical_cast<std::string>(_response.body.size()));//body_size;
 
-	_response.headers[6] = "Connection";
-	_response.headers[7] = "close";
+	_response.headers.push_back("Content-Type");
+	_response.headers.push_back(get_content_type(_response.file_extension));
+
+	_response.headers.push_back("Connection");
+	_response.headers.push_back("close");
 
 	/*
 	 *  HTTP/1.1 200 OK
@@ -470,15 +535,7 @@ std::vector<boost::asio::const_buffer> Parser::format_response_to_send_it_to_soc
 
 		buffer.push_back(boost::asio::buffer(_response.headers[i + 1]));
 		buffer.push_back(boost::asio::buffer(crlf));
-
-		//header_string += _response.headers[i] + ": " + _response.headers[i + 1] + "\r\n";
 	}
-
-	//header_string += "\r\n";
-	//header_string += _response.body;
-	//header_string += "\r\n\r\n\0";
-
-	//buffer.push_back(boost::asio::buffer(header_string));
 
 	buffer.push_back(boost::asio::buffer(crlf));
 	if (!_f_is_HEAD_method)

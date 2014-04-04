@@ -37,6 +37,7 @@ private:
 	std::string get_content_string_by_status(response::status_type type);
 	std::string get_status_string (response::status_type type);
 
+	std::string get_UTC_datetime_string();
 private:
 
 	request::request _request;
