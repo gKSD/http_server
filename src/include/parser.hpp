@@ -24,6 +24,8 @@ public:
 
 	std::vector<boost::asio::const_buffer> format_response_to_send_it_to_socket();
 
+	//std::stringbuf format_response_to_send_it_to_socket1();
+
 private:
 
 	bool is_valid_url (std::string url);

@@ -17,6 +17,8 @@
 
 #include <boost/regex.hpp>
 
+#include <boost/lexical_cast.hpp>
+
 
 #include <string.h>
 #include <stdlib.h>
@@ -72,11 +74,7 @@ bool Parser::parse(const std::string& request)
 	//1) парсим метод, урл и протокол
 	//остальные заголовки ниже отдельно
 	if (getline(stream_request, line)) parse_first_line(line);
-	else return false; //&&&&&&
-
-	//std::cout <<"Method: "<< _request.method<<std::endl;
-	//std::cout <<"URL: " << _request.url<<std::endl;
-	//std::cout <<"Protocol: " << _request.protocol<<std::endl;
+	else return false;
 
 	//парсим остальные заголовки
 	while (getline(stream_request, line))
@@ -99,7 +97,6 @@ bool Parser::parse(const std::string& request)
 			}
 
 			_request.headers.insert(std::pair<std::string,std::string>(header, value));
-			//std::cout<<"** "<<header<< " => "<<_request.headers.at(header)<<std::endl;
 		}
 	}
 
@@ -116,7 +113,6 @@ bool Parser::parse_first_line(std::string &str)
 	std::vector<std::string> tokens;
 	boost::split(tokens, str, boost::is_any_of(" \t\n\r"));
 	std::vector<std::string>::iterator it = tokens.begin();
-	//std::cout<< "1: "<< *it<<std::endl;
 
 	if (tokens.size() == 0)
 	{
@@ -320,6 +316,8 @@ response::status_type Parser::make_response()
 			}
 
 			char buffer[buffer_length];
+			_response.body.clear();
+			_response.body = "";
 			while (is.read(buffer, sizeof(buffer)).gcount() > 0)
 				_response.body.append(buffer, is.gcount());
 
@@ -360,28 +358,30 @@ void Parser::form_response(response::status_type status)
 	if (status == response::not_found || status == response::internal_server_error || status == response::method_not_allowed)
 	{
 		_response.file_extension = "html";
-		_response.body.append(get_content_string_by_status(status));
+		_response.body = get_content_string_by_status(status);
 	}
 
+	_response.status_string.clear();
 	_response.status_string = get_status_string(status);
 
-	char body_size [50];
-	sprintf(body_size, "%ld", _response.body.size());
+	//char body_size [50];
+	//sprintf(body_size, "%ld", _response.body.size());
 
+	_response.headers.resize(8);
 	//_response.headers.push_back("Date");
 	//_response.headers.push_back("123123");
 
-	_response.headers.push_back("Server");
-	_response.headers.push_back("http_server");
+	_response.headers[0] = "Server";
+	_response.headers[1] = "http_server";
 
-	_response.headers.push_back("Content-Length");
-	_response.headers.push_back(body_size);
+	_response.headers[2] = "Content-Length";
+	_response.headers[3] = boost::lexical_cast<std::string>(_response.body.size());//body_size;
 
-	_response.headers.push_back("Content-Type");
-	_response.headers.push_back((get_content_type(_response.file_extension)+""));
+	_response.headers[4] = "Content-Type";
+	_response.headers[5] = get_content_type(_response.file_extension);
 
-	_response.headers.push_back("Connection");
-	_response.headers.push_back("close");
+	_response.headers[6] = "Connection";
+	_response.headers[7] = "close";
 
 	/*
 	 *  HTTP/1.1 200 OK
@@ -428,7 +428,7 @@ std::string Parser::get_status_string (response::status_type type)
 }
 
 
-std::vector<boost::asio::const_buffer> Parser::format_response_to_send_it_to_socket()
+/*std::vector<boost::asio::const_buffer> Parser::format_response_to_send_it_to_socket()
 {
 	std::vector<boost::asio::const_buffer> buffer;
 
@@ -437,15 +437,16 @@ std::vector<boost::asio::const_buffer> Parser::format_response_to_send_it_to_soc
 	std::size_t n = _response.headers.size();
 
 
-	const char crlf[] = { '\r', '\n' };
-	const char name_value_separator[] = { ':', ' ' };
+	const char crlf[] = {'\r', '\n'};
+
+	//const char name_value_separator[] = { ':', ' ' };
 	//const char crlf[] = "\r\n";
 	//const char name_value_separator[] = ":  ";
 	for (std::size_t i = 0; i < n; i += 2)
 	{
 		buffer.push_back(boost::asio::buffer(_response.headers[i]));
 		//buffer.push_back(boost::asio::buffer(":"));
-		buffer.push_back(boost::asio::buffer(name_value_separator));
+		//buffer.push_back(boost::asio::buffer(name_value_separator));
 
 		buffer.push_back(boost::asio::buffer(_response.headers[i + 1]));
 		//buffer.push_back(boost::asio::buffer("\r\n"));
@@ -457,7 +458,40 @@ std::vector<boost::asio::const_buffer> Parser::format_response_to_send_it_to_soc
 	buffer.push_back(boost::asio::buffer(_response.body));
 
 	return buffer;
+}*/
+
+std::vector<boost::asio::const_buffer> Parser::format_response_to_send_it_to_socket()
+{
+	std::vector<boost::asio::const_buffer> buffer;
+
+	buffer.push_back(boost::asio::buffer(_response.status_string));
+
+	std::size_t n = _response.headers.size();
+
+	for (std::size_t i = 0; i < n; i += 2)
+	{
+		buffer.push_back(boost::asio::buffer(_response.headers[i]));
+		buffer.push_back(boost::asio::buffer(name_value_separator));
+
+		buffer.push_back(boost::asio::buffer(_response.headers[i + 1]));
+		buffer.push_back(boost::asio::buffer(crlf));
+
+		//header_string += _response.headers[i] + ": " + _response.headers[i + 1] + "\r\n";
+	}
+
+	//header_string += "\r\n";
+	//header_string += _response.body;
+	//header_string += "\r\n\r\n\0";
+
+	//buffer.push_back(boost::asio::buffer(header_string));
+
+	buffer.push_back(boost::asio::buffer(crlf));
+	buffer.push_back(boost::asio::buffer(_response.body));
+
+	return buffer;
 }
+
+//std::stringbuf Parser::format_response_to_send_it_to_socket1(){}
 
 
 
